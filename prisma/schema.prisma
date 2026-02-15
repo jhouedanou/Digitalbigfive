@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Authentication & Users ─────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  password       String
+  firstName      String
+  lastName       String
+  organization   String?
+  jobTitle       String?
+  profileImage   String?
+  role           String    @default("client") // "client" | "admin"
+  emailVerified  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastLoginAt    DateTime?
+
+  orders       Order[]
+  testimonials Testimonial[]
+  sessions     Session[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Resources (Free + Paid) ────────────────────────────────
+
+model Resource {
+  id               String   @id @default(cuid())
+  title            String
+  slug             String   @unique
+  shortDescription String
+  longDescription  String
+  type             String   // "free" | "paid"
+  category         String   // Social Media, Publicité, Data & Performance, Stratégie, Formation
+  resourceType     String   // Guide, Template, Check-list, Étude, Outil, Formation, E-book
+  level            String   // Débutant, Intermédiaire, Avancé
+  format           String   // PDF, Spreadsheet, Slides, Notion, Vidéo
+  coverImage       String
+  previewImages    String?  // JSON array of image URLs
+  filePath         String   // Path to the actual file
+  fileSize         String?
+  pageCount        Int?
+  estimatedTime    String?
+  status           String   @default("draft") // "draft" | "published" | "archived"
+
+  // Paid product specific fields
+  price            Float?
+  originalPrice    Float?   // Strikethrough price for promotions
+  currency         String   @default("EUR")
+  sku              String?
+  allowDownload    Boolean  @default(false)
+  enableWatermark  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  faqs         FAQ[]
+  testimonials Testimonial[]
+  orders       Order[]
+  downloads    Download[]
+}
+
+// ─── FAQ (for paid products) ────────────────────────────────
+
+model FAQ {
+  id         String   @id @default(cuid())
+  resourceId String
+  question   String
+  answer     String
+  sortOrder  Int      @default(0)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+}
+
+// ─── Testimonials ───────────────────────────────────────────
+
+model Testimonial {
+  id         String   @id @default(cuid())
+  resourceId String
+  userId     String
+  rating     Int      // 1-5
+  text       String   // max 200 chars
+  status     String   @default("pending") // "pending" | "approved" | "rejected"
+  createdAt  DateTime @default(now())
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceId, userId])
+}
+
+// ─── Orders ─────────────────────────────────────────────────
+
+model Order {
+  id              String   @id @default(cuid())
+  userId          String
+  resourceId      String
+  amount          Float
+  currency        String   @default("EUR")
+  status          String   @default("pending") // "pending" | "paid" | "refunded"
+  stripeSessionId String?
+  stripePaymentId String?
+  createdAt       DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+}
+
+// ─── Contacts (free resource downloads) ─────────────────────
+
+model Contact {
+  id           String   @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String
+  organization String?
+  jobTitle     String?
+  gdprConsent  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  downloads Download[]
+}
+
+// ─── Downloads (tracking free resource downloads) ───────────
+
+model Download {
+  id         String   @id @default(cuid())
+  contactId  String
+  resourceId String
+  token      String   @unique
+  expiresAt  DateTime
+  downloadedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  contact  Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+}
+
+// ─── Site Settings (admin config) ───────────────────────────
+
+model SiteSettings {
+  id    String @id @default("default")
+  key   String @unique
+  value String
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#059669"/>
+  <text x="400" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white">E-BOOK</text>
+  <text x="400" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#a7f3d0">Data-Driven Marketing</text>
+  <text x="400" y="345" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#d1fae5">pour PME</text>
+  <rect x="320" y="370" width="160" height="40" rx="8" fill="#f59e0b"/>
+  <text x="400" y="395" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">29,00 EUR</text>
+</svg>

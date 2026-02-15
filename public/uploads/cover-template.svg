@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#10b981"/>
+  <text x="400" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white">Data Reporting</text>
+  <text x="400" y="330" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#a7f3d0">Template mensuel</text>
+</svg>

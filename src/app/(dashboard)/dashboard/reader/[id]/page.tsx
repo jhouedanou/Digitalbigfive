@@ -1,0 +1,41 @@
+import { redirect, notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import PDFReader from "@/components/dashboard/PDFReader";
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function ReaderPage({ params }: PageProps) {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  const { id: resourceId } = await params;
+
+  // Verify access
+  const order = await prisma.order.findFirst({
+    where: {
+      userId: session.user.id,
+      resourceId,
+      status: "paid",
+    },
+    include: { resource: true },
+  });
+
+  const isAdmin = session.user.role === "admin";
+
+  if (!order && !isAdmin) notFound();
+
+  const resource = order?.resource || await prisma.resource.findUnique({ where: { id: resourceId } });
+  if (!resource) notFound();
+
+  return (
+    <PDFReader
+      resourceId={resourceId}
+      title={resource.title}
+      userEmail={session.user.email}
+      enableWatermark={resource.enableWatermark}
+    />
+  );
+}
