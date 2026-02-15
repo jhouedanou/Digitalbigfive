@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#dc2626"/>
+  <text x="400" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white">KIT COMPLET</text>
+  <text x="400" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#fca5a5">Facebook &amp; Instagram Ads</text>
+  <rect x="320" y="350" width="160" height="40" rx="8" fill="white"/>
+  <text x="400" y="375" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#dc2626">39,00 EUR</text>
+</svg>

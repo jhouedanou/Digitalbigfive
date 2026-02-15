@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#1d4ed8"/>
+  <text x="400" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white">MASTERCLASS</text>
+  <text x="400" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#93c5fd">Stratégie de contenu</text>
+  <text x="400" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#bfdbfe">Social Media</text>
+  <rect x="320" y="380" width="160" height="40" rx="8" fill="#f59e0b"/>
+  <text x="400" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">49,00 EUR</text>
+</svg>
