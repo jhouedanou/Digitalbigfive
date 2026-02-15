@@ -1,7 +1,26 @@
 import Stripe from "stripe";
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-01-28.clover",
+let stripeInstance: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (!stripeInstance) {
+    const apiKey = process.env.STRIPE_SECRET_KEY;
+    if (!apiKey) {
+      throw new Error("STRIPE_SECRET_KEY is not set");
+    }
+    stripeInstance = new Stripe(apiKey, {
+      apiVersion: "2026-01-28.clover",
+    });
+  }
+  return stripeInstance;
+}
+
+// Lazy-initialized proxy to avoid Stripe initialization at module load time
+// This enables successful builds without requiring STRIPE_SECRET_KEY at build time
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, prop: keyof Stripe) {
+    return getStripe()[prop];
+  },
 });
 
 export async function createCheckoutSession({
