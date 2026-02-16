@@ -79,6 +79,7 @@ export default function ResourceForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
 
   const isEditing = !!initialData?.id;
 
@@ -113,6 +114,38 @@ export default function ResourceForm({
       setError(err instanceof Error ? err.message : "Erreur d'upload");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handlePdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPdf(true);
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload-pdf", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.error || "Erreur d'upload du PDF");
+      }
+
+      // Mise à jour automatique du chemin et de la taille
+      update("filePath", result.url);
+      update("fileSize", result.fileSize);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur d'upload du PDF");
+    } finally {
+      setUploadingPdf(false);
     }
   }
 
@@ -320,14 +353,70 @@ export default function ResourceForm({
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Chemin du fichier
+            Fichier PDF
           </label>
-          <input
-            value={data.filePath}
-            onChange={(e) => update("filePath", e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            placeholder="/uploads/resource.pdf"
-          />
+          <div className="flex gap-3 items-start">
+            <div className="flex-1">
+              <input
+                value={data.filePath}
+                onChange={(e) => update("filePath", e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                placeholder="URL du fichier PDF ou uploader ci-dessous"
+              />
+              <div className="mt-2">
+                <label className="inline-flex items-center gap-2 cursor-pointer bg-[#80368D] hover:bg-[#6a2d76] text-white text-sm px-4 py-2 rounded-lg transition-colors">
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handlePdfUpload}
+                    className="hidden"
+                  />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  {uploadingPdf ? "Upload en cours..." : "Uploader un PDF"}
+                </label>
+                <span className="ml-2 text-xs text-gray-500">Max 50 MB</span>
+              </div>
+            </div>
+            {data.filePath && (
+              <div className="flex-shrink-0">
+                <a
+                  href={data.filePath}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-[#80368D] hover:underline text-sm"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Voir le PDF
+                </a>
+              </div>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-4">
           <div>
@@ -337,9 +426,11 @@ export default function ResourceForm({
             <input
               value={data.fileSize}
               onChange={(e) => update("fileSize", e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              placeholder="2.5 MB"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50"
+              placeholder="Rempli automatiquement"
+              readOnly={!!data.fileSize}
             />
+            <p className="text-xs text-gray-500 mt-1">Rempli automatiquement lors de l&apos;upload</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

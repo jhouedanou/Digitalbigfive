@@ -21,14 +21,20 @@ function getAdminSupabaseClient() {
   });
 }
 
+// Formater la taille du fichier en format lisible
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user || (session.user as { role?: string }).role !== "admin") {
-      return NextResponse.json(
-        { error: "Accès refusé" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
     const formData = await request.formData();
@@ -41,27 +47,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
+    // Valider le type de fichier (PDF uniquement)
+    if (file.type !== "application/pdf") {
       return NextResponse.json(
-        { error: "Type de fichier non autorisé. Utilisez JPG, PNG, WebP, SVG ou GIF." },
+        { error: "Type de fichier non autorisé. Utilisez uniquement des fichiers PDF." },
         { status: 400 }
       );
     }
 
-    // Max 5MB
-    if (file.size > 5 * 1024 * 1024) {
+    // Max 50MB pour les PDF
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
       return NextResponse.json(
-        { error: "Le fichier ne doit pas dépasser 5 Mo." },
+        { error: "Le fichier ne doit pas dépasser 50 Mo." },
         { status: 400 }
       );
     }
 
-    // Generate unique filename
-    const ext = file.name.split(".").pop() || "jpg";
-    const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
-    const filePath = `covers/${filename}`;
+    // Générer un nom de fichier unique
+    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+    const filename = `${Date.now()}-${originalName}`;
+    const filePath = `pdfs/${filename}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -72,12 +78,12 @@ export async function POST(request: NextRequest) {
     const { error: uploadError } = await supabaseAdmin.storage
       .from("uploads")
       .upload(filePath, buffer, {
-        contentType: file.type,
+        contentType: "application/pdf",
         upsert: false,
       });
 
     if (uploadError) {
-      console.error("Upload error:", uploadError);
+      console.error("Upload PDF error:", uploadError);
       return NextResponse.json(
         { error: `Erreur d'upload: ${uploadError.message}` },
         { status: 500 }
@@ -88,13 +94,17 @@ export async function POST(request: NextRequest) {
       .from("uploads")
       .getPublicUrl(filePath);
 
+    // Retourner l'URL, le chemin et la taille formatée
     return NextResponse.json({
       url: urlData.publicUrl,
       path: filePath,
+      fileSize: formatFileSize(file.size),
+      fileSizeBytes: file.size,
+      fileName: file.name,
     });
   } catch (error) {
-    console.error("Upload error:", error);
-    const message = error instanceof Error ? error.message : "Erreur lors de l'upload";
+    console.error("Upload PDF error:", error);
+    const message = error instanceof Error ? error.message : "Erreur lors de l'upload du PDF";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
