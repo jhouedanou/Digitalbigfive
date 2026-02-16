@@ -13,6 +13,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify that the user still exists in the database (JWT may contain stale data)
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Votre session est invalide. Veuillez vous reconnecter." },
+        { status: 401 }
+      );
+    }
+
     const { slug } = await request.json();
     if (!slug) {
       return NextResponse.json(
@@ -58,17 +70,12 @@ export async function POST(request: NextRequest) {
     // Create a pending order
     const order = await prisma.order.create({
       data: {
-        userId: session.user.id,
+        userId: user.id,
         resourceId: resource.id,
         amount: resource.price,
         currency: resource.currency,
         status: "pending",
       },
-    });
-
-    // Get user details for Moneroo
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -78,13 +85,13 @@ export async function POST(request: NextRequest) {
       amount: resource.price,
       currency: resource.currency,
       description: resource.title,
-      customerEmail: user?.email || session.user.email || "",
-      customerFirstName: user?.firstName || "Client",
-      customerLastName: user?.lastName || "",
+      customerEmail: user.email,
+      customerFirstName: user.firstName,
+      customerLastName: user.lastName,
       metadata: {
         orderId: order.id,
         resourceId: resource.id,
-        userId: session.user.id,
+        userId: user.id,
       },
       returnUrl: `${appUrl}/achat/succes`,
     });
@@ -99,8 +106,17 @@ export async function POST(request: NextRequest) {
       checkout_url: payment.data.checkout_url,
       orderId: order.id,
     });
-  } catch (error) {
-    console.error("Checkout error:", error);
+  } catch (error: any) {
+    console.error("Checkout error:", error?.message || error);
+    
+    // Forward Moneroo-specific errors with details
+    if (error?.monerooError) {
+      return NextResponse.json(
+        { error: `Erreur Moneroo: ${error.message}` },
+        { status: error.status || 500 }
+      );
+    }
+    
     return NextResponse.json(
       { error: "Erreur lors de l'initialisation du paiement." },
       { status: 500 }

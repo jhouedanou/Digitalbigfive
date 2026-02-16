@@ -63,7 +63,16 @@ export async function initializePayment(
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`Moneroo API error: ${response.status} - ${errorBody}`);
+    let monerooMessage = errorBody;
+    try {
+      const parsed = JSON.parse(errorBody);
+      monerooMessage = parsed.message || errorBody;
+    } catch {}
+    console.error("[Moneroo] Payment init failed:", response.status, errorBody);
+    const error = new Error(monerooMessage);
+    (error as any).status = response.status;
+    (error as any).monerooError = true;
+    throw error;
   }
 
   return response.json();
