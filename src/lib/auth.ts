@@ -1,63 +1,42 @@
-import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import { compare } from "bcryptjs";
+import { createClient } from "@/lib/supabase-server";
 import { prisma } from "./prisma";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-  },
-  providers: [
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Mot de passe", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+export interface AppUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
+export interface AppSession {
+  user: AppUser;
+}
 
-        if (!user) return null;
+/**
+ * Récupère la session utilisateur côté serveur (Server Components / Route Handlers).
+ * Remplace l'ancien `auth()` de NextAuth.
+ */
+export async function auth(): Promise<AppSession | null> {
+  const supabase = await createClient();
+  const {
+    data: { user: supabaseUser },
+  } = await supabase.auth.getUser();
 
-        const isValid = await compare(
-          credentials.password as string,
-          user.password
-        );
-        if (!isValid) return null;
+  if (!supabaseUser?.email) return null;
 
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastLoginAt: new Date() },
-        });
+  // Chercher l'utilisateur dans notre base Prisma
+  const user = await prisma.user.findUnique({
+    where: { email: supabaseUser.email },
+  });
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: `${user.firstName} ${user.lastName}`,
-          role: user.role,
-        };
-      },
-    }),
-  ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = (user as { role: string }).role;
-        token.id = user.id;
-      }
-      return token;
+  if (!user) return null;
+
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      name: `${user.firstName} ${user.lastName}`,
+      role: user.role,
     },
-    async session({ session, token }) {
-      if (session.user) {
-        (session.user as { role: string }).role = token.role as string;
-        (session.user as { id: string }).id = token.id as string;
-      }
-      return session;
-    },
-  },
-});
+  };
+}

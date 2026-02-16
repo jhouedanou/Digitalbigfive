@@ -17,7 +17,12 @@
       "Bash(powershell -Command \"[System.IO.File]::WriteAllText\\(''C:\\\\Users\\\\socialmedia\\\\Documents\\\\GitHub\\\\Digitalbigfive\\\\.db_url_tmp'', ''postgresql://postgres:D-rrHcB%3F7%21HPwd7@db.jqsyxftdargaottivpeh.supabase.co:5432/postgres''\\)\")",
       "Bash(powershell -Command \"Get-Content .db_url_tmp | npx vercel env add DATABASE_URL production\")",
       "Bash(taskkill:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(cmd /c:*)",
+      "Bash(del /f \"node_modules\\\\.prisma\\\\client\\\\query_engine-windows.dll.node\")",
+      "Bash(npx tsc:*)",
+      "Bash(findstr:*)",
+      "Bash(dir:*)"
     ]
   }
 }

@@ -6,21 +6,21 @@ import { useEffect, useState, Suspense } from "react";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
-  const paymentId = searchParams.get("paymentId");
-  const paymentStatus = searchParams.get("paymentStatus");
+  const token = searchParams.get("token");
   const [status, setStatus] = useState<"loading" | "success" | "pending" | "failed">(
-    paymentStatus === "success" ? "success" : "loading"
+    "loading"
   );
 
   useEffect(() => {
-    if (!paymentId || paymentStatus === "success") {
-      if (!paymentId) setStatus("success");
+    if (!token) {
+      // No token = direct access, assume success (IPN will confirm)
+      setStatus("success");
       return;
     }
 
     async function verifyPayment() {
       try {
-        const res = await fetch(`/api/checkout/verify?paymentId=${paymentId}`);
+        const res = await fetch(`/api/checkout/verify?token=${token}`);
         const data = await res.json();
         if (data.status === "success" || data.status === "paid") {
           setStatus("success");
@@ -35,7 +35,7 @@ function SuccessContent() {
     }
 
     verifyPayment();
-  }, [paymentId, paymentStatus]);
+  }, [token]);
 
   if (status === "loading") {
     return (
