@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import fs from "fs";
-import path from "path";
 
 export async function GET(
   _req: NextRequest,
@@ -34,23 +32,24 @@ export async function GET(
     data: { downloadedAt: new Date() },
   });
 
-  // Serve file
-  const filePath = path.join(process.cwd(), "public", download.resource.filePath);
+  const filePath = download.resource.filePath;
 
-  if (!fs.existsSync(filePath)) {
-    return NextResponse.json(
-      { error: "Fichier introuvable" },
-      { status: 404 }
-    );
+  // Si le fichier est une URL complète (Supabase Storage), rediriger
+  if (filePath.startsWith("http")) {
+    return NextResponse.redirect(filePath);
   }
 
-  const fileBuffer = fs.readFileSync(filePath);
-  const fileName = path.basename(download.resource.filePath);
+  // Si c'est un chemin Supabase Storage relatif
+  if (filePath.startsWith("pdfs/") || filePath.startsWith("covers/")) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/uploads/${filePath}`;
+    return NextResponse.redirect(publicUrl);
+  }
 
-  return new NextResponse(fileBuffer, {
-    headers: {
-      "Content-Type": "application/octet-stream",
-      "Content-Disposition": `attachment; filename="${fileName}"`,
-    },
-  });
+  // Fallback: construire l'URL Supabase à partir du nom de fichier
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const fileName = filePath.replace(/^\/?(uploads\/)?/, "");
+  const publicUrl = `${supabaseUrl}/storage/v1/object/public/uploads/${fileName}`;
+  
+  return NextResponse.redirect(publicUrl);
 }
