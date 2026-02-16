@@ -78,11 +78,42 @@ export default function ResourceForm({
   const [data, setData] = useState<ResourceData>(initialData || EMPTY);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   const isEditing = !!initialData?.id;
 
   function update(field: string, value: unknown) {
     setData((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.error || "Erreur d'upload");
+      }
+
+      update("coverImage", result.url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur d'upload");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -254,14 +285,38 @@ export default function ResourceForm({
         <h2 className="text-lg font-semibold">Fichiers</h2>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Image de couverture (URL ou chemin)
+            Image de couverture
           </label>
-          <input
-            value={data.coverImage}
-            onChange={(e) => update("coverImage", e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            placeholder="/uploads/cover-image.jpg"
-          />
+          <div className="flex gap-3 items-start">
+            <div className="flex-1">
+              <input
+                value={data.coverImage}
+                onChange={(e) => update("coverImage", e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                placeholder="URL de l'image ou uploader ci-dessous"
+              />
+              <div className="mt-2">
+                <label className="inline-flex items-center gap-2 cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  {uploading ? "Upload en cours..." : "Uploader une image"}
+                </label>
+              </div>
+            </div>
+            {data.coverImage && (
+              <div className="w-24 h-24 rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
+                <img
+                  src={data.coverImage}
+                  alt="Aperçu"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -320,26 +375,27 @@ export default function ResourceForm({
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Prix *
+                Prix (FCFA) *
               </label>
               <input
                 type="number"
-                step="0.01"
+                step="1"
                 value={data.price || ""}
                 onChange={(e) =>
                   update("price", e.target.value ? Number(e.target.value) : null)
                 }
                 required={data.type === "paid"}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                placeholder="25000"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Prix barré (promo)
+                Prix barré FCFA (promo)
               </label>
               <input
                 type="number"
-                step="0.01"
+                step="1"
                 value={data.originalPrice || ""}
                 onChange={(e) =>
                   update(
@@ -348,6 +404,7 @@ export default function ResourceForm({
                   )
                 }
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                placeholder="39000"
               />
             </div>
             <div>
