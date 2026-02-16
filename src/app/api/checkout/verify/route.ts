@@ -1,33 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyPayment } from "@/lib/moneroo";
+import { verifyPayment } from "@/lib/paytech";
 
 export async function GET(request: NextRequest) {
   try {
-    const paymentId = request.nextUrl.searchParams.get("paymentId");
+    const token = request.nextUrl.searchParams.get("token");
 
-    if (!paymentId) {
+    if (!token) {
       return NextResponse.json(
-        { error: "paymentId manquant" },
+        { error: "token manquant" },
         { status: 400 }
       );
     }
 
-    // Verify payment with Moneroo
-    const payment = await verifyPayment(paymentId);
-    const paymentStatus = payment.data.status;
+    // Verify payment status with PayTech
+    const payment = await verifyPayment(token);
+
+    // Determine status from PayTech response
+    const isSuccess = payment.success === 1;
+    const paymentStatus = isSuccess ? "success" : "pending";
 
     // Update order if found
     const order = await prisma.order.findFirst({
-      where: { monerooTransactionId: paymentId },
+      where: { paytechToken: token },
     });
 
-    if (order && paymentStatus === "success" && order.status !== "paid") {
+    if (order && isSuccess && order.status !== "paid") {
       await prisma.order.update({
         where: { id: order.id },
         data: {
           status: "paid",
-          monerooPaymentId: paymentId,
+          paytechPaymentRef: token,
         },
       });
     }

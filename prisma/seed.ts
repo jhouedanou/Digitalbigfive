@@ -588,7 +588,7 @@ async function main() {
           amount: sampleProduct.price || 0,
           currency: sampleProduct.currency,
           status: "paid",
-          monerooPaymentId: "sample_test_001",
+          paytechPaymentRef: "sample_test_001",
         },
       });
       console.log("Sample order created for test client");

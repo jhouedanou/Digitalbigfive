@@ -35,6 +35,7 @@ export default async function ReaderPage({ params }: PageProps) {
       resourceId={resourceId}
       title={resource.title}
       userEmail={session.user.email}
+      userName={session.user.name || "Utilisateur"}
       enableWatermark={resource.enableWatermark}
     />
   );

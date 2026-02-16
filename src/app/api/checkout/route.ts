@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { initializePayment } from "@/lib/moneroo";
+import { initializePayment } from "@/lib/paytech";
 
 export async function POST(request: NextRequest) {
   try {
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-    // Initialize Moneroo payment
+    // Initialize PayTech payment
     const payment = await initializePayment({
       amount: resource.price,
       currency: resource.currency,
@@ -93,30 +93,33 @@ export async function POST(request: NextRequest) {
         resourceId: resource.id,
         userId: user.id,
       },
+      refCommand: order.id,
       returnUrl: `${appUrl}/achat/succes`,
+      cancelUrl: `${appUrl}/achat/annule`,
+      ipnUrl: `${appUrl}/api/webhook`,
     });
 
-    // Store the Moneroo transaction ID
+    // Store the PayTech token
     await prisma.order.update({
       where: { id: order.id },
-      data: { monerooTransactionId: payment.data.id },
+      data: { paytechToken: payment.token },
     });
 
     return NextResponse.json({
-      checkout_url: payment.data.checkout_url,
+      checkout_url: payment.redirect_url,
       orderId: order.id,
     });
   } catch (error: any) {
     console.error("Checkout error:", error?.message || error);
-    
-    // Forward Moneroo-specific errors with details
-    if (error?.monerooError) {
+
+    // Forward PayTech-specific errors with details
+    if (error?.paytechError) {
       return NextResponse.json(
-        { error: `Erreur Moneroo: ${error.message}` },
+        { error: `Erreur PayTech: ${error.message}` },
         { status: error.status || 500 }
       );
     }
-    
+
     return NextResponse.json(
       { error: "Erreur lors de l'initialisation du paiement." },
       { status: 500 }

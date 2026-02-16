@@ -113,8 +113,8 @@ model Order {
   amount          Float
   currency             String   @default("XOF")
   status               String   @default("pending") // "pending" | "paid" | "failed" | "cancelled" | "refunded"
-  monerooTransactionId String?
-  monerooPaymentId     String?
+  paytechToken          String?
+  paytechPaymentRef     String?
   createdAt       DateTime @default(now())
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)

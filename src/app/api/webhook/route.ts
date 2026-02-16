@@ -1,85 +1,82 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyWebhookSignature } from "@/lib/moneroo";
+import { verifyIpnSignature, verifyIpnSha256 } from "@/lib/paytech";
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.text();
-    const signature = request.headers.get("x-moneroo-signature");
+    const body = await request.json();
 
-    if (!signature) {
+    const {
+      type_event,
+      ref_command,
+      item_price,
+      token,
+      api_key_sha256,
+      api_secret_sha256,
+      hmac_compute,
+    } = body;
+
+    if (!type_event || !ref_command) {
       return NextResponse.json(
-        { error: "Signature manquante" },
-        { status: 401 }
+        { error: "Données de notification manquantes" },
+        { status: 400 }
       );
     }
 
-    // Verify webhook signature
-    const isValid = verifyWebhookSignature(payload, signature);
+    // Verify IPN authenticity using HMAC (preferred) or SHA256 fallback
+    let isValid = false;
+
+    if (hmac_compute) {
+      isValid = verifyIpnSignature(item_price, ref_command, hmac_compute);
+    }
+
+    if (!isValid && api_key_sha256 && api_secret_sha256) {
+      isValid = verifyIpnSha256(api_key_sha256, api_secret_sha256);
+    }
+
     if (!isValid) {
+      console.error("[PayTech IPN] Signature invalide pour ref_command:", ref_command);
       return NextResponse.json(
         { error: "Signature invalide" },
         { status: 401 }
       );
     }
 
-    const event = JSON.parse(payload);
-    const eventType = event.type || event.event;
-    const paymentData = event.data;
-
-    if (!paymentData?.id) {
-      return NextResponse.json(
-        { error: "Données de paiement manquantes" },
-        { status: 400 }
-      );
-    }
-
-    // Find the order by Moneroo transaction ID
-    const order = await prisma.order.findFirst({
-      where: { monerooTransactionId: paymentData.id },
+    // Find the order by ref_command (which is the order ID)
+    const order = await prisma.order.findUnique({
+      where: { id: ref_command },
     });
 
     if (!order) {
-      console.warn(`Order not found for Moneroo transaction: ${paymentData.id}`);
+      console.warn(`Order not found for PayTech ref_command: ${ref_command}`);
       return NextResponse.json({ received: true });
     }
 
-    switch (eventType) {
-      case "payment.success": {
+    switch (type_event) {
+      case "sale_complete": {
         await prisma.order.update({
           where: { id: order.id },
           data: {
             status: "paid",
-            monerooPaymentId: paymentData.id,
+            paytechPaymentRef: token || ref_command,
           },
         });
         break;
       }
 
-      case "payment.failed": {
-        await prisma.order.update({
-          where: { id: order.id },
-          data: {
-            status: "failed",
-            monerooPaymentId: paymentData.id,
-          },
-        });
-        break;
-      }
-
-      case "payment.cancelled": {
+      case "sale_canceled": {
         await prisma.order.update({
           where: { id: order.id },
           data: {
             status: "cancelled",
-            monerooPaymentId: paymentData.id,
+            paytechPaymentRef: token || ref_command,
           },
         });
         break;
       }
 
       default:
-        console.log(`Unhandled Moneroo event: ${eventType}`);
+        console.log(`Unhandled PayTech event: ${type_event}`);
     }
 
     return NextResponse.json({ received: true });

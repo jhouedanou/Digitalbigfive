@@ -56,15 +56,6 @@ export default async function MyProductsPage() {
                 >
                   Lire en ligne
                 </Link>
-                {order.resource.allowDownload && (
-                  <a
-                    href={`/api/pdf/${order.resource.id}`}
-                    className="block w-full mt-2 border border-gray-300 text-gray-700 text-center py-2 rounded-lg text-sm font-medium hover:bg-gray-50"
-                    download
-                  >
-                    Télécharger
-                  </a>
-                )}
               </div>
             </div>
           ))}

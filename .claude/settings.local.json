@@ -6,7 +6,18 @@
       "Bash(del \"C:\\\\Users\\\\socialmedia\\\\Documents\\\\GitHub\\\\Digitalbigfive\\\\src\\\\lib\\\\stripe.ts\")",
       "Bash(npm install:*)",
       "Bash(npx tsx:*)",
-      "Bash(npx next build:*)"
+      "Bash(npx next build:*)",
+      "Bash(npx vercel env ls:*)",
+      "Bash(npx vercel env pull:*)",
+      "Bash(npx vercel env rm:*)",
+      "Bash(npx vercel env add:*)",
+      "Bash(npx vercel:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:digitalbigfive.vercel.app)",
+      "Bash(powershell -Command \"[System.IO.File]::WriteAllText\\(''C:\\\\Users\\\\socialmedia\\\\Documents\\\\GitHub\\\\Digitalbigfive\\\\.db_url_tmp'', ''postgresql://postgres:D-rrHcB%3F7%21HPwd7@db.jqsyxftdargaottivpeh.supabase.co:5432/postgres''\\)\")",
+      "Bash(powershell -Command \"Get-Content .db_url_tmp | npx vercel env add DATABASE_URL production\")",
+      "Bash(taskkill:*)",
+      "Bash(powershell:*)"
     ]
   }
 }

@@ -419,13 +419,13 @@ export default function ResourceForm({
             </div>
           </div>
           <div className="flex gap-6">
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-sm text-gray-400">
               <input
                 type="checkbox"
-                checked={data.allowDownload}
-                onChange={(e) => update("allowDownload", e.target.checked)}
+                checked={false}
+                disabled
               />
-              Autoriser le téléchargement
+              Téléchargement désactivé (lecture en ligne uniquement)
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input
