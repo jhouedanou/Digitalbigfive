@@ -3,7 +3,8 @@
     "allow": [
       "WebSearch",
       "WebFetch(domain:docs.moneroo.io)",
-      "Bash(del \"C:\\\\Users\\\\socialmedia\\\\Documents\\\\GitHub\\\\Digitalbigfive\\\\src\\\\lib\\\\stripe.ts\")"
+      "Bash(del \"C:\\\\Users\\\\socialmedia\\\\Documents\\\\GitHub\\\\Digitalbigfive\\\\src\\\\lib\\\\stripe.ts\")",
+      "Bash(npm install:*)"
     ]
   }
 }
