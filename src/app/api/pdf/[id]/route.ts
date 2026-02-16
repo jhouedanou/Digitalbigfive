@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import fs from "fs";
-import path from "path";
+import { createClient } from "@supabase/supabase-js";
 import {
   verifyViewerToken,
   validateSession,
   logAccess,
 } from "@/lib/pdf-security";
 import { headers } from "next/headers";
+
+// Supabase admin client for file access
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 /**
  * GET /api/pdf/[id]
@@ -52,6 +57,8 @@ export async function GET(
     }
 
     const payload = verifyViewerToken(viewerToken);
+    console.log("[pdf/id] Token payload:", payload);
+    
     if (!payload) {
       await logAccess(session.user.id, resourceId, undefined, "blocked", undefined, ipAddress, userAgent, {
         reason: "Token invalide ou expiré",
@@ -63,6 +70,9 @@ export async function GET(
     }
 
     // ─── Vérifier que le token appartient à cet utilisateur ───
+    console.log("[pdf/id] Comparing user:", { tokenUser: payload.userId, sessionUser: session.user.id });
+    console.log("[pdf/id] Comparing resource:", { tokenResource: payload.resourceId, requestResource: resourceId });
+    
     if (payload.userId !== session.user.id || payload.resourceId !== resourceId) {
       await logAccess(session.user.id, resourceId, undefined, "blocked", undefined, ipAddress, userAgent, {
         reason: "Token ne correspond pas",
@@ -74,11 +84,15 @@ export async function GET(
     }
 
     // ─── Valider la session ───────────────────────────────────
+    console.log("[pdf/id] Validating session:", payload.sessionId);
+    
     const isValidSession = await validateSession(
       payload.sessionId,
       session.user.id,
       resourceId
     );
+
+    console.log("[pdf/id] Session valid:", isValidSession);
 
     if (!isValidSession) {
       return NextResponse.json(
@@ -99,17 +113,37 @@ export async function GET(
       );
     }
 
-    // ─── Lire le fichier PDF ──────────────────────────────────
-    const filePath = path.join(process.cwd(), "public", resource.filePath);
+    // ─── Lire le fichier PDF depuis Supabase Storage ──────────
+    if (!resource.filePath) {
+      return NextResponse.json(
+        { error: "Chemin du fichier non défini" },
+        { status: 404 }
+      );
+    }
 
-    if (!fs.existsSync(filePath)) {
+    // Clean file path - remove leading slash if present
+    let cleanPath = resource.filePath.startsWith("/")
+      ? resource.filePath.slice(1)
+      : resource.filePath;
+    
+    // Remove "uploads/" prefix since we're already accessing the "uploads" bucket
+    if (cleanPath.startsWith("uploads/")) {
+      cleanPath = cleanPath.slice(8);
+    }
+
+    const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+      .from("uploads")
+      .download(cleanPath);
+
+    if (downloadError || !fileData) {
+      console.error("PDF download error:", downloadError);
       return NextResponse.json(
         { error: "Fichier introuvable sur le serveur" },
         { status: 404 }
       );
     }
 
-    const fileBuffer = fs.readFileSync(filePath);
+    const fileBuffer = Buffer.from(await fileData.arrayBuffer());
 
     // ─── Retourner le PDF avec headers de sécurité ────────────
     return new NextResponse(fileBuffer, {

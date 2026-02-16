@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import SecurePDFReader from "@/components/dashboard/SecurePDFReader";
+import SimplePDFReader from "@/components/dashboard/SimplePDFReader";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -31,12 +31,11 @@ export default async function ReaderPage({ params }: PageProps) {
   if (!resource) notFound();
 
   return (
-    <SecurePDFReader
+    <SimplePDFReader
       resourceId={resourceId}
       title={resource.title}
       userEmail={session.user.email}
       userName={session.user.name || "Utilisateur"}
-      enableWatermark={resource.enableWatermark}
     />
   );
 }

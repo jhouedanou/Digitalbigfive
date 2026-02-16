@@ -204,6 +204,8 @@ export async function validateSession(
   userId: string,
   resourceId: string
 ): Promise<boolean> {
+  console.log("[validateSession] Checking:", { sessionId, userId, resourceId });
+  
   const session = await prisma.viewerSession.findFirst({
     where: {
       id: sessionId,
@@ -215,6 +217,8 @@ export async function validateSession(
       },
     },
   });
+
+  console.log("[validateSession] Session found:", !!session);
 
   if (!session) return false;
 

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
+import ProductsClientWrapper from "./ProductsClientWrapper";
 
 export default async function MyProductsPage() {
   const session = await auth();
@@ -13,9 +14,32 @@ export default async function MyProductsPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  const productsData = orders.map((order) => ({
+    id: order.id,
+    resourceId: order.resource.id,
+    title: order.resource.title,
+    coverImage: order.resource.coverImage,
+    purchaseDate: order.createdAt.toISOString(),
+  }));
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Mes produits</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Mes produits</h1>
+        
+        {orders.length > 0 && (
+          <Link
+            href="/dashboard/reader"
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+            Bibliothèque offline
+          </Link>
+        )}
+      </div>
 
       {orders.length === 0 ? (
         <div className="text-center py-16">
@@ -30,36 +54,7 @@ export default async function MyProductsPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {orders.map((order) => (
-            <div
-              key={order.id}
-              className="bg-white border border-gray-200 rounded-xl overflow-hidden"
-            >
-              <div className="aspect-[4/3] bg-gray-100">
-                <img
-                  src={order.resource.coverImage || "/placeholder.svg"}
-                  alt={order.resource.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-gray-900 mb-1">
-                  {order.resource.title}
-                </h3>
-                <p className="text-xs text-gray-500 mb-4">
-                  Acheté le {formatDate(order.createdAt)}
-                </p>
-                <Link
-                  href={`/dashboard/reader/${order.resource.id}`}
-                  className="block w-full bg-[#80368D] text-white text-center py-2 rounded-lg text-sm font-medium hover:bg-[#6a2d76]"
-                >
-                  Lire en ligne
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+        <ProductsClientWrapper products={productsData} />
       )}
     </div>
   );

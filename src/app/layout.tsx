@@ -1,11 +1,29 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import AuthProvider from "@/components/providers/SessionProvider";
+import { ServiceWorkerProvider } from "@/components/pwa/ServiceWorkerProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Big Five - Ressources & Produits Digitaux",
   description:
     "Découvrez nos ressources gratuites et produits digitaux premium pour booster votre stratégie marketing.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Big Five Reader",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#80368D",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -15,8 +33,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
+      <head>
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
       <body className="antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <ServiceWorkerProvider>{children}</ServiceWorkerProvider>
+        </AuthProvider>
       </body>
     </html>
   );
