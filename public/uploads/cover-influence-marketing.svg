@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#ec4899"/>
+  <circle cx="400" cy="210" r="50" fill="white" opacity="0.15"/>
+  <circle cx="310" cy="260" r="30" fill="white" opacity="0.1"/>
+  <circle cx="490" cy="260" r="30" fill="white" opacity="0.1"/>
+  <circle cx="260" cy="210" r="20" fill="white" opacity="0.08"/>
+  <circle cx="540" cy="210" r="20" fill="white" opacity="0.08"/>
+  <text x="400" y="380" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="bold" fill="white">Influence Marketing</text>
+  <text x="400" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#fbcfe8">Kit de collaboration</text>
+</svg>

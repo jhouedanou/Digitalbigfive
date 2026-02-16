@@ -13,7 +13,7 @@ export function slugify(text: string): string {
     .replace(/(^-|-$)+/g, "");
 }
 
-export function formatPrice(amount: number, currency = "EUR"): string {
+export function formatPrice(amount: number, currency = "XOF"): string {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency,

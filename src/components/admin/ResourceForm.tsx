@@ -44,7 +44,7 @@ const EMPTY: ResourceData = {
   status: "draft",
   price: null,
   originalPrice: null,
-  currency: "EUR",
+  currency: "XOF",
   sku: "",
   allowDownload: false,
   enableWatermark: true,

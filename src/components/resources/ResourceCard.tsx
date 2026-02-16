@@ -27,7 +27,7 @@ export default function ResourceCard({
   resourceType,
   price,
   originalPrice,
-  currency = "EUR",
+  currency = "XOF",
 }: ResourceCardProps) {
   const isFree = type === "free";
   const href = isFree ? `/ressources/${slug}` : `/produits/${slug}`;

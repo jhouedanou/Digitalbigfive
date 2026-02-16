@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#dc2626"/>
+  <circle cx="400" cy="240" r="80" fill="white" opacity="0.1"/>
+  <circle cx="400" cy="240" r="50" fill="white" opacity="0.1"/>
+  <line x1="400" y1="190" x2="400" y2="240" stroke="white" stroke-width="3" opacity="0.5"/>
+  <line x1="400" y1="240" x2="440" y2="260" stroke="white" stroke-width="3" opacity="0.5"/>
+  <text x="400" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="bold" fill="white">Audit Digital</text>
+  <text x="400" y="440" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#fecaca">Check-list complète</text>
+</svg>

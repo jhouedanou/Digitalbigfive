@@ -61,7 +61,7 @@ model Resource {
   // Paid product specific fields
   price            Float?
   originalPrice    Float?   // Strikethrough price for promotions
-  currency         String   @default("EUR")
+  currency         String   @default("XOF")
   sku              String?
   allowDownload    Boolean  @default(false)
   enableWatermark  Boolean  @default(true)
@@ -110,10 +110,10 @@ model Order {
   userId          String
   resourceId      String
   amount          Float
-  currency        String   @default("EUR")
-  status          String   @default("pending") // "pending" | "paid" | "refunded"
-  stripeSessionId String?
-  stripePaymentId String?
+  currency             String   @default("XOF")
+  status               String   @default("pending") // "pending" | "paid" | "failed" | "cancelled" | "refunded"
+  monerooTransactionId String?
+  monerooPaymentId     String?
   createdAt       DateTime @default(now())
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
