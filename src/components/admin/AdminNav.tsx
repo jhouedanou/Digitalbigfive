@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { useAuth } from "@/components/providers/SessionProvider";
 import {
   LayoutDashboard,
   FileText,
@@ -15,6 +15,7 @@ import {
 
 export default function AdminNav() {
   const pathname = usePathname();
+  const { signOut } = useAuth();
 
   const links = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -64,7 +65,7 @@ export default function AdminNav() {
               Voir le site
             </Link>
             <button
-              onClick={() => signOut({ callbackUrl: "/" })}
+              onClick={() => signOut()}
               className="flex items-center gap-1 text-xs text-gray-400 hover:text-white"
             >
               <LogOut size={14} />

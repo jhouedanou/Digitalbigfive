@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 
 export default function ProfilePage() {
-  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [profile, setProfile] = useState({

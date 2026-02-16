@@ -1,3 +1,13 @@
-import { handlers } from "@/lib/auth";
+// Cette route n'est plus nécessaire avec Supabase Auth.
+// Les callbacks d'auth sont gérés côté client via @supabase/ssr.
+// Ce fichier peut être supprimé.
 
-export const { GET, POST } = handlers;
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  return NextResponse.json({ message: "Auth gérée par Supabase" });
+}
+
+export async function POST() {
+  return NextResponse.json({ message: "Auth gérée par Supabase" });
+}

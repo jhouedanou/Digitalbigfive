@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
+import { useAuth } from "@/components/providers/SessionProvider";
 
 export default function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, loading, signOut } = useAuth();
 
   const links = [
     { href: "/", label: "Ressources" },
-    { href: "/login", label: "Espace client" },
   ];
 
   return (
@@ -39,6 +40,39 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
+
+            {/* Indicateur de connexion */}
+            {loading ? (
+              <span className="text-xs text-gray-400">…</span>
+            ) : user ? (
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-1.5 text-sm font-medium text-green-600 hover:text-green-700 transition-colors"
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  Mon espace
+                </Link>
+                <button
+                  onClick={() => signOut()}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Déconnexion"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <User size={16} />
+                Espace client
+              </Link>
+            )}
           </nav>
 
           <button
@@ -61,6 +95,37 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
+            {!loading && (
+              user ? (
+                <div className="flex items-center gap-3 py-2">
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-1.5 text-sm font-medium text-green-600"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    Mon espace
+                  </Link>
+                  <button
+                    onClick={() => signOut()}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <LogOut size={16} />
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="block py-2 text-sm text-gray-600 hover:text-gray-900"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Espace client
+                </Link>
+              )
+            )}
           </div>
         )}
       </div>

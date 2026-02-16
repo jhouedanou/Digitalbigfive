@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/components/providers/SessionProvider";
 import Link from "next/link";
 
 interface BuyButtonProps {
@@ -12,14 +12,15 @@ interface BuyButtonProps {
 
 export default function BuyButton({ resourceSlug, className = "" }: BuyButtonProps) {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   async function handleClick() {
     // Check if user is logged in BEFORE making any API call
-    if (status !== "authenticated" || !session?.user) {
+    if (authLoading) return;
+    if (!user) {
       setShowLoginPrompt(true);
       return;
     }
@@ -92,10 +93,10 @@ export default function BuyButton({ resourceSlug, className = "" }: BuyButtonPro
     <div>
       <button
         onClick={handleClick}
-        disabled={loading || status === "loading"}
+        disabled={loading || authLoading}
         className={`bg-blue-600 hover:bg-blue-700 text-white py-3 px-8 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       >
-        {status === "loading" ? "Chargement..." : loading ? "Redirection..." : "Acheter maintenant"}
+        {authLoading ? "Chargement..." : loading ? "Redirection..." : "Acheter maintenant"}
       </button>
       {error && (
         <p className="text-sm text-red-600 mt-2">{error}</p>

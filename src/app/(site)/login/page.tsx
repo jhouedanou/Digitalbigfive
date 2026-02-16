@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { signIn } from "next-auth/react";
+import { createClient } from "@/lib/supabase-browser";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -17,14 +17,14 @@ function LoginForm() {
     setError("");
 
     const formData = new FormData(e.currentTarget);
+    const supabase = createClient();
 
-    const result = await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-      redirect: false,
+    const { error } = await supabase.auth.signInWithPassword({
+      email: formData.get("email") as string,
+      password: formData.get("password") as string,
     });
 
-    if (result?.error) {
+    if (error) {
       setError("Email ou mot de passe incorrect");
       setLoading(false);
     } else {

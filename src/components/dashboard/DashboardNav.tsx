@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { useAuth } from "@/components/providers/SessionProvider";
 import { LayoutDashboard, BookOpen, Receipt, User, Star, LogOut } from "lucide-react";
 
 interface DashboardNavProps {
@@ -11,6 +11,7 @@ interface DashboardNavProps {
 
 export default function DashboardNav({ user }: DashboardNavProps) {
   const pathname = usePathname();
+  const { signOut } = useAuth();
 
   const links = [
     { href: "/dashboard", label: "Accueil", icon: LayoutDashboard },
@@ -54,7 +55,7 @@ export default function DashboardNav({ user }: DashboardNavProps) {
           </nav>
 
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut()}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900"
           >
             <LogOut size={16} />

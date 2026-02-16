@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase-browser";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,6 +18,9 @@ export default function RegisterPage() {
     const formData = new FormData(e.currentTarget);
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
+    const email = formData.get("email") as string;
+    const firstName = formData.get("firstName") as string;
+    const lastName = formData.get("lastName") as string;
 
     if (password !== confirmPassword) {
       setError("Les mots de passe ne correspondent pas");
@@ -25,13 +29,31 @@ export default function RegisterPage() {
     }
 
     try {
+      // 1. Créer le compte Supabase Auth
+      const supabase = createClient();
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          },
+        },
+      });
+
+      if (signUpError) {
+        throw new Error(signUpError.message);
+      }
+
+      // 2. Créer le profil dans Prisma (via API)
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: formData.get("firstName"),
-          lastName: formData.get("lastName"),
-          email: formData.get("email"),
+          firstName,
+          lastName,
+          email,
           password,
           organization: formData.get("organization"),
           jobTitle: formData.get("jobTitle"),

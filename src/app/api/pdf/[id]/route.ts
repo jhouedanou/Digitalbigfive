@@ -3,103 +3,143 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import fs from "fs";
 import path from "path";
-import crypto from "crypto";
+import {
+  verifyViewerToken,
+  validateSession,
+  logAccess,
+} from "@/lib/pdf-security";
+import { headers } from "next/headers";
 
-// Generate a secure viewer token for a user + resource combination
-function verifyViewerToken(token: string, userId: string, resourceId: string): boolean {
-  const secret = process.env.NEXTAUTH_SECRET || "fallback-secret";
-  // Token format: timestamp.signature
-  const parts = token.split(".");
-  if (parts.length !== 2) return false;
-  
-  const [timestamp, signature] = parts;
-  const ts = parseInt(timestamp, 10);
-  
-  // Token expires after 2 hours
-  if (Date.now() - ts > 2 * 60 * 60 * 1000) return false;
-  
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(`${userId}:${resourceId}:${timestamp}`)
-    .digest("hex");
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature, "hex"),
-    Buffer.from(expected, "hex")
-  );
-}
-
+/**
+ * GET /api/pdf/[id]
+ * 
+ * Endpoint de streaming sécurisé pour les PDFs.
+ * - Vérifie le token JWT de session
+ * - Valide les droits d'accès
+ * - Log les accès pour audit
+ * - Headers de sécurité stricts
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const headersList = await headers();
+  const ipAddress = headersList.get("x-forwarded-for") || "unknown";
+  const userAgent = headersList.get("user-agent") || "unknown";
 
-  const { id: resourceId } = await params;
+  try {
+    // ─── Authentification ─────────────────────────────────────
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Authentification requise" },
+        { status: 401 }
+      );
+    }
 
-  // Verify viewer token from query params (prevents URL sharing)
-  const viewerToken = req.nextUrl.searchParams.get("token");
-  if (!viewerToken || !verifyViewerToken(viewerToken, session.user.id, resourceId)) {
+    const { id: resourceId } = await params;
+
+    // ─── Vérification du token de session ─────────────────────
+    const viewerToken = req.nextUrl.searchParams.get("token");
+    if (!viewerToken) {
+      await logAccess(session.user.id, resourceId, undefined, "blocked", undefined, ipAddress, userAgent, {
+        reason: "Token manquant",
+      });
+      return NextResponse.json(
+        { error: "Token de session manquant" },
+        { status: 401 }
+      );
+    }
+
+    const payload = verifyViewerToken(viewerToken);
+    if (!payload) {
+      await logAccess(session.user.id, resourceId, undefined, "blocked", undefined, ipAddress, userAgent, {
+        reason: "Token invalide ou expiré",
+      });
+      return NextResponse.json(
+        { error: "Token de visualisation invalide ou expiré. Veuillez rouvrir le document." },
+        { status: 403 }
+      );
+    }
+
+    // ─── Vérifier que le token appartient à cet utilisateur ───
+    if (payload.userId !== session.user.id || payload.resourceId !== resourceId) {
+      await logAccess(session.user.id, resourceId, undefined, "blocked", undefined, ipAddress, userAgent, {
+        reason: "Token ne correspond pas",
+      });
+      return NextResponse.json(
+        { error: "Token non autorisé pour cette ressource" },
+        { status: 403 }
+      );
+    }
+
+    // ─── Valider la session ───────────────────────────────────
+    const isValidSession = await validateSession(
+      payload.sessionId,
+      session.user.id,
+      resourceId
+    );
+
+    if (!isValidSession) {
+      return NextResponse.json(
+        { error: "Session expirée. Veuillez rouvrir le document." },
+        { status: 403 }
+      );
+    }
+
+    // ─── Récupérer la ressource ───────────────────────────────
+    const resource = await prisma.resource.findUnique({
+      where: { id: resourceId },
+    });
+
+    if (!resource) {
+      return NextResponse.json(
+        { error: "Ressource introuvable" },
+        { status: 404 }
+      );
+    }
+
+    // ─── Lire le fichier PDF ──────────────────────────────────
+    const filePath = path.join(process.cwd(), "public", resource.filePath);
+
+    if (!fs.existsSync(filePath)) {
+      return NextResponse.json(
+        { error: "Fichier introuvable sur le serveur" },
+        { status: 404 }
+      );
+    }
+
+    const fileBuffer = fs.readFileSync(filePath);
+
+    // ─── Retourner le PDF avec headers de sécurité ────────────
+    return new NextResponse(fileBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Length": fileBuffer.length.toString(),
+        // Empêcher le téléchargement direct
+        "Content-Disposition": "inline; filename=document.pdf",
+        // Empêcher le cache
+        "Cache-Control": "no-store, no-cache, must-revalidate, private, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+        // Sécurité du contenu
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-XSS-Protection": "1; mode=block",
+        // CSP strict
+        "Content-Security-Policy": "default-src 'self'; script-src 'none'; object-src 'none';",
+        // Empêcher les requêtes de range (téléchargement partiel)
+        "Accept-Ranges": "none",
+        // Headers personnalisés pour le tracking
+        "X-Session-Id": payload.sessionId,
+        "X-Resource-Id": resourceId,
+      },
+    });
+  } catch (error) {
+    console.error("PDF streaming error:", error);
     return NextResponse.json(
-      { error: "Token de visualisation invalide ou expiré. Veuillez rouvrir le document." },
-      { status: 403 }
+      { error: "Erreur interne du serveur" },
+      { status: 500 }
     );
   }
-
-  // Verify user has purchased this product
-  const order = await prisma.order.findFirst({
-    where: {
-      userId: session.user.id,
-      resourceId,
-      status: "paid",
-    },
-  });
-
-  // Allow admin access too
-  const isAdmin = session.user.role === "admin";
-
-  if (!order && !isAdmin) {
-    return NextResponse.json({ error: "Accès refusé — achat requis" }, { status: 403 });
-  }
-
-  const resource = await prisma.resource.findUnique({
-    where: { id: resourceId },
-  });
-
-  if (!resource) {
-    return NextResponse.json(
-      { error: "Ressource introuvable" },
-      { status: 404 }
-    );
-  }
-
-  const filePath = path.join(process.cwd(), "public", resource.filePath);
-
-  if (!fs.existsSync(filePath)) {
-    return NextResponse.json(
-      { error: "Fichier introuvable" },
-      { status: 404 }
-    );
-  }
-
-  const fileBuffer = fs.readFileSync(filePath);
-
-  return new NextResponse(fileBuffer, {
-    headers: {
-      "Content-Type": "application/pdf",
-      // Prevent download, caching, and sharing
-      "Content-Disposition": "inline; filename=document.pdf",
-      "Cache-Control": "no-store, no-cache, must-revalidate, private",
-      "Pragma": "no-cache",
-      "Expires": "0",
-      "X-Content-Type-Options": "nosniff",
-      "X-Frame-Options": "SAMEORIGIN",
-      "Content-Security-Policy": "default-src 'self'",
-      // Prevent range requests (partial downloads)
-      "Accept-Ranges": "none",
-    },
-  });
 }

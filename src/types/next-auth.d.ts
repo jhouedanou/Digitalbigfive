@@ -1,23 +1,11 @@
-import "next-auth";
-
-declare module "next-auth" {
-  interface User {
-    role?: string;
-  }
-
-  interface Session {
-    user: {
-      id: string;
-      role: string;
-      email: string;
-      name: string;
-    };
-  }
+// Types d'auth pour l'application (Supabase Auth + Prisma)
+export interface AppUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
 }
 
-declare module "next-auth/jwt" {
-  interface JWT {
-    role?: string;
-    id?: string;
-  }
+export interface AppSession {
+  user: AppUser;
 }
