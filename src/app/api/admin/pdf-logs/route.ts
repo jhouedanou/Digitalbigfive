@@ -144,9 +144,6 @@ export async function POST(req: NextRequest) {
         where: { ...where, action: "open" },
         orderBy: { createdAt: "desc" },
         take: 10,
-        include: {
-          // On ne peut pas inclure directement, on enrichira après
-        },
       }),
     ]);
 
