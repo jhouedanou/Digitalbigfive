@@ -123,7 +123,7 @@ export default function AdminTrackingPage() {
         <button
           onClick={handleSave}
           disabled={loading}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="bg-[#80368D] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#6a2d76] disabled:opacity-50"
         >
           {loading ? "Enregistrement..." : "Sauvegarder"}
         </button>

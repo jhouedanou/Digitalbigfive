@@ -8,26 +8,23 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ─── Authentication & Users ─────────────────────────────────
-
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
-  password       String
-  firstName      String
-  lastName       String
-  organization   String?
-  jobTitle       String?
-  profileImage   String?
-  role           String    @default("client") // "client" | "admin"
-  emailVerified  DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  lastLoginAt    DateTime?
-
-  orders       Order[]
-  testimonials Testimonial[]
-  sessions     Session[]
+  id            String        @id @default(cuid())
+  email         String        @unique
+  password      String
+  firstName     String
+  lastName      String
+  organization  String?
+  jobTitle      String?
+  profileImage  String?
+  role          String        @default("client")
+  emailVerified DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lastLoginAt   DateTime?
+  orders        Order[]
+  sessions      Session[]
+  testimonials  Testimonial[]
 }
 
 model Session {
@@ -38,45 +35,37 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// ─── Resources (Free + Paid) ────────────────────────────────
-
 model Resource {
-  id               String   @id @default(cuid())
+  id               String        @id @default(cuid())
   title            String
-  slug             String   @unique
+  slug             String        @unique
   shortDescription String
   longDescription  String
-  type             String   // "free" | "paid"
-  category         String   // Social Media, Publicité, Data & Performance, Stratégie, Formation
-  resourceType     String   // Guide, Template, Check-list, Étude, Outil, Formation, E-book
-  level            String   // Débutant, Intermédiaire, Avancé
-  format           String   // PDF, Spreadsheet, Slides, Notion, Vidéo
+  type             String
+  category         String
+  resourceType     String
+  level            String
+  format           String
   coverImage       String
-  previewImages    String?  // JSON array of image URLs
-  filePath         String   // Path to the actual file
+  previewImages    String?
+  filePath         String
   fileSize         String?
   pageCount        Int?
   estimatedTime    String?
-  status           String   @default("draft") // "draft" | "published" | "archived"
-
-  // Paid product specific fields
+  status           String        @default("draft")
   price            Float?
-  originalPrice    Float?   // Strikethrough price for promotions
-  currency         String   @default("XOF")
+  originalPrice    Float?
+  currency         String        @default("XOF")
   sku              String?
-  allowDownload    Boolean  @default(false)
-  enableWatermark  Boolean  @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  faqs         FAQ[]
-  testimonials Testimonial[]
-  orders       Order[]
-  downloads    Download[]
+  allowDownload    Boolean       @default(false)
+  enableWatermark  Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  downloads        Download[]
+  faqs             FAQ[]
+  orders           Order[]
+  testimonials     Testimonial[]
 }
-
-// ─── FAQ (for paid products) ────────────────────────────────
 
 model FAQ {
   id         String   @id @default(cuid())
@@ -87,110 +76,92 @@ model FAQ {
   resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 }
 
-// ─── Testimonials ───────────────────────────────────────────
-
 model Testimonial {
   id         String   @id @default(cuid())
   resourceId String
   userId     String
-  rating     Int      // 1-5
-  text       String   // max 200 chars
-  status     String   @default("pending") // "pending" | "approved" | "rejected"
+  rating     Int
+  text       String
+  status     String   @default("pending")
   createdAt  DateTime @default(now())
-
-  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([resourceId, userId])
 }
 
-// ─── Orders ─────────────────────────────────────────────────
-
 model Order {
-  id              String   @id @default(cuid())
-  userId          String
-  resourceId      String
-  amount          Float
-  currency             String   @default("XOF")
-  status               String   @default("pending") // "pending" | "paid" | "failed" | "cancelled" | "refunded"
-  paytechToken          String?
-  paytechPaymentRef     String?
-  createdAt       DateTime @default(now())
-
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  userId            String
+  resourceId        String
+  amount            Float
+  currency          String   @default("XOF")
+  status            String   @default("pending")
+  createdAt         DateTime @default(now())
+  paytechPaymentRef String?
+  paytechToken      String?
+  resource          Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// ─── Contacts (free resource downloads) ─────────────────────
-
 model Contact {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   firstName    String
   lastName     String
   email        String
   organization String?
   jobTitle     String?
-  gdprConsent  Boolean  @default(false)
-  createdAt    DateTime @default(now())
-
-  downloads Download[]
+  gdprConsent  Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  downloads    Download[]
 }
-
-// ─── Downloads (tracking free resource downloads) ───────────
 
 model Download {
-  id         String   @id @default(cuid())
-  contactId  String
-  resourceId String
-  token      String   @unique
-  expiresAt  DateTime
+  id           String    @id @default(cuid())
+  contactId    String
+  resourceId   String
+  token        String    @unique
+  expiresAt    DateTime
   downloadedAt DateTime?
-  createdAt  DateTime @default(now())
-
-  contact  Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  contact      Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  resource     Resource  @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 }
 
-// ─── PDF Viewer Sessions (secure reading) ───────────────────
-
 model ViewerSession {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   userId       String
   resourceId   String
-  sessionToken String    @unique
+  sessionToken String   @unique
   ipAddress    String?
   userAgent    String?
-  startedAt    DateTime  @default(now())
-  lastActiveAt DateTime  @default(now())
+  startedAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
   expiresAt    DateTime
-  isActive     Boolean   @default(true)
-  totalPages   Int       @default(0)
-  pagesViewed  Int       @default(0)
-  duration     Int       @default(0) // seconds
+  isActive     Boolean  @default(true)
+  totalPages   Int      @default(0)
+  pagesViewed  Int      @default(0)
+  duration     Int      @default(0)
 
   @@index([userId, resourceId])
   @@index([sessionToken])
 }
 
-// ─── PDF Access Logs (audit trail) ──────────────────────────
-
 model PDFAccessLog {
-  id           String   @id @default(cuid())
-  userId       String
-  resourceId   String
-  sessionId    String?
-  action       String   // "open" | "page_view" | "close" | "expired" | "blocked"
-  pageNumber   Int?
-  ipAddress    String?
-  userAgent    String?
-  metadata     String?  // JSON for additional data
-  createdAt    DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  resourceId String
+  sessionId  String?
+  action     String
+  pageNumber Int?
+  ipAddress  String?
+  userAgent  String?
+  metadata   String?
+  createdAt  DateTime @default(now())
 
   @@index([userId, resourceId])
   @@index([createdAt])
 }
-
-// ─── Site Settings (admin config) ───────────────────────────
 
 model SiteSettings {
   id    String @id @default("default")

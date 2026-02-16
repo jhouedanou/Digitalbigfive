@@ -280,7 +280,7 @@ export default function PDFReader({
         <p className="text-gray-600 mb-6">{error}</p>
         <Link
           href="/dashboard/produits"
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-[#80368D] text-white px-6 py-2 rounded-lg hover:bg-[#6a2d76]"
         >
           Retour à mes produits
         </Link>
@@ -384,7 +384,7 @@ export default function PDFReader({
       {/* Progress bar */}
       <div className="h-1 bg-gray-900 shrink-0">
         <div
-          className="h-full bg-blue-500 transition-all"
+          className="h-full bg-[#80368D] transition-all"
           style={{ width: `${(pageNum / totalPages) * 100}%` }}
         />
       </div>

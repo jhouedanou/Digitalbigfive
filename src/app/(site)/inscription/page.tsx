@@ -75,7 +75,7 @@ export default function RegisterPage() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-16">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">
+      <h1 className="text-2xl font-bold text-[#29358B] mb-2 text-center">
         Créer un compte
       </h1>
       <p className="text-sm text-gray-500 text-center mb-8">
@@ -91,7 +91,7 @@ export default function RegisterPage() {
             <input
               name="firstName"
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
             />
           </div>
           <div>
@@ -101,7 +101,7 @@ export default function RegisterPage() {
             <input
               name="lastName"
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
             />
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function RegisterPage() {
             name="email"
             type="email"
             required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
           />
         </div>
 
@@ -127,7 +127,7 @@ export default function RegisterPage() {
             type="password"
             required
             minLength={8}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
           />
         </div>
 
@@ -140,7 +140,7 @@ export default function RegisterPage() {
             type="password"
             required
             minLength={8}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
           />
         </div>
 
@@ -150,7 +150,7 @@ export default function RegisterPage() {
           </label>
           <input
             name="organization"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
           />
         </div>
 
@@ -160,7 +160,7 @@ export default function RegisterPage() {
           </label>
           <input
             name="jobTitle"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
           />
         </div>
 
@@ -173,7 +173,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="w-full bg-[#80368D] text-white py-3 rounded-lg font-semibold hover:bg-[#6a2d76] transition-colors disabled:opacity-50"
         >
           {loading ? "Création..." : "Créer mon compte"}
         </button>
@@ -181,7 +181,7 @@ export default function RegisterPage() {
 
       <p className="text-sm text-gray-500 text-center mt-6">
         Déjà un compte ?{" "}
-        <Link href="/login" className="text-blue-600 underline">
+        <Link href="/login" className="text-[#80368D] underline">
           Se connecter
         </Link>
       </p>

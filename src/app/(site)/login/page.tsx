@@ -42,7 +42,7 @@ function LoginForm() {
           name="email"
           type="email"
           required
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
         />
       </div>
       <div>
@@ -53,7 +53,7 @@ function LoginForm() {
           name="password"
           type="password"
           required
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
         />
       </div>
 
@@ -66,7 +66,7 @@ function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+        className="w-full bg-[#80368D] text-white py-3 rounded-lg font-semibold hover:bg-[#6a2d76] transition-colors disabled:opacity-50"
       >
         {loading ? "Connexion..." : "Se connecter"}
       </button>
@@ -77,7 +77,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="max-w-md mx-auto px-4 py-24">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">
+      <h1 className="text-2xl font-bold text-[#29358B] mb-2 text-center">
         Connexion
       </h1>
       <p className="text-sm text-gray-500 text-center mb-8">
@@ -90,7 +90,7 @@ export default function LoginPage() {
 
       <p className="text-sm text-gray-500 text-center mt-6">
         Pas encore de compte ?{" "}
-        <Link href="/inscription" className="text-blue-600 underline">
+        <Link href="/inscription" className="text-[#80368D] underline">
           Créer un compte
         </Link>
       </p>

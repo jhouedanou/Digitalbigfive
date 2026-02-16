@@ -14,13 +14,13 @@ export default function ThankYouPage() {
       <div className="space-y-4">
         <Link
           href="/"
-          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
+          className="inline-block bg-[#80368D] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#6a2d76]"
         >
           Découvrir d&apos;autres ressources
         </Link>
         <p className="text-sm text-gray-500">
           Découvrez aussi nos{" "}
-          <Link href="/?access=paid" className="text-blue-600 underline">
+          <Link href="/?access=paid" className="text-[#80368D] underline">
             produits premium
           </Link>
         </p>

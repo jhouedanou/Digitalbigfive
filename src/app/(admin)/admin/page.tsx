@@ -53,7 +53,7 @@ export default function AdminDashboard() {
 
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <div className="flex items-center gap-3 mb-2">
-            <ShoppingCart size={20} className="text-blue-600" />
+            <ShoppingCart size={20} className="text-[#80368D]" />
             <span className="text-sm text-gray-500">Ventes ce mois</span>
           </div>
           <p className="text-2xl font-bold text-gray-900">

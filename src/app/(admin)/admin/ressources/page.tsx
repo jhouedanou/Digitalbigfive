@@ -41,7 +41,7 @@ export default function AdminResourcesPage() {
         </h1>
         <Link
           href="/admin/ressources/new"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          className="flex items-center gap-2 bg-[#80368D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a2d76]"
         >
           <Plus size={16} />
           Nouvelle ressource
@@ -56,7 +56,7 @@ export default function AdminResourcesPage() {
             onClick={() => setFilter(val)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
               filter === val
-                ? "bg-blue-600 text-white"
+                ? "bg-[#80368D] text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
@@ -101,7 +101,7 @@ export default function AdminResourcesPage() {
                     className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                       r.type === "free"
                         ? "bg-green-100 text-green-700"
-                        : "bg-blue-100 text-blue-700"
+                        : "bg-[#D0E4F2] text-[#80368D]"
                     }`}
                   >
                     {r.type === "free" ? "Gratuit" : "Payant"}

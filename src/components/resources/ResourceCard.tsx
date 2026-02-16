@@ -60,7 +60,7 @@ export default function ResourceCard({
               {level}
             </span>
           </div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+          <h3 className="font-semibold text-gray-900 group-hover:text-[#80368D] transition-colors line-clamp-2">
             {title}
           </h3>
           <p className="text-sm text-gray-500 mt-1 line-clamp-2">
@@ -68,7 +68,7 @@ export default function ResourceCard({
           </p>
           <div className="mt-3 flex items-center justify-between">
             <span className="text-xs text-gray-400">{resourceType}</span>
-            <span className="text-sm font-medium text-blue-600 group-hover:underline">
+            <span className="text-sm font-medium text-[#29358B] group-hover:underline">
               {isFree ? "Télécharger" : "Voir le produit"} →
             </span>
           </div>
@@ -77,7 +77,7 @@ export default function ResourceCard({
               <span className="text-sm line-through text-gray-400">
                 {formatPrice(originalPrice, currency)}
               </span>
-              <span className="text-sm font-bold text-green-600">
+              <span className="text-sm font-bold text-[#80368D]">
                 {formatPrice(price || 0, currency)}
               </span>
             </div>

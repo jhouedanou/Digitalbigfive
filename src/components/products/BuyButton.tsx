@@ -68,13 +68,13 @@ export default function BuyButton({ resourceSlug, className = "" }: BuyButtonPro
         <div className="flex gap-2">
           <Link
             href={`/login?callbackUrl=/produits/${resourceSlug}`}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-semibold text-center transition-colors"
+            className="flex-1 bg-[#80368D] hover:bg-[#6a2d76] text-white py-3 px-6 rounded-lg font-semibold text-center transition-colors"
           >
             Se connecter
           </Link>
           <Link
             href={`/inscription?callbackUrl=/produits/${resourceSlug}`}
-            className="flex-1 border border-blue-600 text-blue-600 hover:bg-blue-50 py-3 px-6 rounded-lg font-semibold text-center transition-colors"
+            className="flex-1 border border-[#80368D] text-[#80368D] hover:bg-[#80368D]/10 py-3 px-6 rounded-lg font-semibold text-center transition-colors"
           >
             Créer un compte
           </Link>
@@ -94,7 +94,7 @@ export default function BuyButton({ resourceSlug, className = "" }: BuyButtonPro
       <button
         onClick={handleClick}
         disabled={loading || authLoading}
-        className={`bg-blue-600 hover:bg-blue-700 text-white py-3 px-8 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+        className={`bg-[#80368D] hover:bg-[#6a2d76] text-white py-3 px-8 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       >
         {authLoading ? "Chargement..." : loading ? "Redirection..." : "Acheter maintenant"}
       </button>

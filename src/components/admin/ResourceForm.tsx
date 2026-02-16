@@ -161,7 +161,7 @@ export default function ResourceForm({
               value="free"
               checked={data.type === "free"}
               onChange={() => update("type", "free")}
-              className="text-blue-600"
+              className="text-[#80368D]"
             />
             <span className="text-sm">Ressource gratuite</span>
           </label>
@@ -172,7 +172,7 @@ export default function ResourceForm({
               value="paid"
               checked={data.type === "paid"}
               onChange={() => update("type", "paid")}
-              className="text-blue-600"
+              className="text-[#80368D]"
             />
             <span className="text-sm">Produit payant</span>
           </label>
@@ -468,7 +468,7 @@ export default function ResourceForm({
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="bg-[#80368D] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#6a2d76] disabled:opacity-50"
         >
           {loading
             ? "Enregistrement..."

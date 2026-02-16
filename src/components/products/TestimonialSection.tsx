@@ -46,7 +46,7 @@ export default function TestimonialSection({
             className="bg-white border border-gray-200 rounded-xl p-5"
           >
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
+              <div className="w-10 h-10 rounded-full bg-[#D0E4F2] flex items-center justify-center text-[#80368D] font-bold text-sm">
                 {t.user.firstName[0]}
                 {t.user.lastName[0]}
               </div>

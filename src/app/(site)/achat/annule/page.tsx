@@ -14,7 +14,7 @@ export default function PurchaseCancelledPage() {
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <Link
           href="/produits"
-          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          className="inline-block bg-[#80368D] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#6a2d76] transition-colors"
         >
           Retour aux produits
         </Link>

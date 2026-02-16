@@ -114,7 +114,7 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-blue-600 text-white py-2 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="bg-[#80368D] text-white py-2 px-6 rounded-lg font-medium hover:bg-[#6a2d76] disabled:opacity-50"
           >
             {loading ? "Enregistrement..." : "Enregistrer"}
           </button>

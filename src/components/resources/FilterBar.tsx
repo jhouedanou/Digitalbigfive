@@ -67,7 +67,7 @@ export default function FilterBar() {
           key={key}
           value={searchParams.get(key) || ""}
           onChange={(e) => updateFilter(key, e.target.value)}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#80368D] focus:border-transparent"
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>

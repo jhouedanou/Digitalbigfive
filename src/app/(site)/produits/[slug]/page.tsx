@@ -58,7 +58,7 @@ export default async function ProductPage({ params }: PageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="flex gap-2 mb-4">
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-[#D0E4F2] text-[#80368D] px-2 py-0.5 rounded-full">
                   {resource.category}
                 </span>
                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
@@ -101,7 +101,7 @@ export default async function ProductPage({ params }: PageProps) {
                   Accès immédiat
                 </div>
                 <div className="flex items-center gap-1">
-                  <RefreshCw size={16} className="text-blue-500" />
+                  <RefreshCw size={16} className="text-[#80368D]" />
                   Garantie 30 jours
                 </div>
               </div>
@@ -195,7 +195,7 @@ export default async function ProductPage({ params }: PageProps) {
                   Accès immédiat après achat
                 </li>
                 <li className="flex items-center gap-2">
-                  <RefreshCw size={14} className="text-blue-500" />
+                  <RefreshCw size={14} className="text-[#80368D]" />
                   Garantie remboursement 30j
                 </li>
               </ul>
@@ -224,13 +224,13 @@ export default async function ProductPage({ params }: PageProps) {
       )}
 
       {/* Final CTA */}
-      <section className="bg-blue-600 text-white py-16">
+      <section className="bg-[#80368D] text-white py-16">
         <div className="max-w-2xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">{resource.title}</h2>
-          <p className="text-blue-100 mb-8">{resource.shortDescription}</p>
+          <p className="text-purple-100 mb-8">{resource.shortDescription}</p>
           <BuyButton
             resourceSlug={resource.slug}
-            className="!bg-white !text-blue-600 hover:!bg-blue-50"
+            className="!bg-white !text-[#80368D] hover:!bg-gray-100"
           />
         </div>
       </section>

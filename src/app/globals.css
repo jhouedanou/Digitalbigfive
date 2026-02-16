@@ -1,40 +1,128 @@
+/* Google Font alternative à Century Gothic -> Montserrat */
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap");
+
 @import "tailwindcss";
 
+/* =========================
+   BIG FIVE — Design tokens
+   (extraits de la charte)
+   ========================= */
+
 :root {
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-  --color-secondary: #f59e0b;
-  --color-bg: #ffffff;
+  /* TYPO */
+  --font-sans: "Montserrat", "Century Gothic", "CenturyGothic", "AppleGothic",
+               "Futura", "Trebuchet MS", Arial, sans-serif;
+
+  /* Échelle de graisses */
+  --fw-thin: 100;
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+  --fw-black: 900;
+
+  /* COULEURS PRINCIPALES Big Five */
+  --bf-violet: #80368D;
+  --bf-blue:   #29358B;
+  --bf-white:  #FFFFFF;
+  --bf-black:  #000000;
+
+  /* COULEURS D'ACCOMPAGNEMENT */
+  --bf-a1: #4E34AD;
+  --bf-a2: #6F4ECC;
+  --bf-a3: #544580;
+  --bf-a4: #6752A3;
+  --bf-a5: #CE9D4D;
+  --bf-a6: #F2CA80;
+  --bf-a7: #F2B33D;
+  --bf-a8: #F8F4B7;
+  --bf-a9: #0A74C0;
+  --bf-a10:#1A1F2B;
+  --bf-a11:#30395C;
+  --bf-a12:#4A6491;
+  --bf-a13:#85A5CC;
+  --bf-a14:#D0E4F2;
+  --bf-a15:#12448B;
+
+  /* Variables de compatibilité (ancien système) */
+  --color-primary: var(--bf-violet);
+  --color-primary-dark: #6a2d76;
+  --color-secondary: var(--bf-a7);
+  --color-bg: var(--bf-white);
   --color-bg-secondary: #f9fafb;
-  --color-text: #111827;
+  --color-text: var(--bf-black);
   --color-text-secondary: #6b7280;
   --color-border: #e5e7eb;
 }
 
-body {
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
-  color: var(--color-text);
-  background: var(--color-bg);
+html, body {
+  font-family: var(--font-sans);
+  color: var(--bf-black);
+  background: var(--bf-white);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--fw-bold);
+}
+
+p {
+  font-weight: var(--fw-regular);
+}
+
+.small {
+  font-size: 0.875rem;
+  font-weight: var(--fw-light);
+}
+
+/* Boutons Big Five */
+.btn-primary {
+  background: var(--bf-violet);
+  color: var(--bf-white);
+  font-weight: var(--fw-medium);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #6a2d76;
+}
+
+.btn-secondary {
+  background: var(--bf-blue);
+  color: var(--bf-white);
+  font-weight: var(--fw-medium);
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: #1f2a6e;
+}
+
+.link {
+  color: var(--bf-blue);
+}
+
+.link:hover {
+  color: var(--bf-violet);
 }
 
 /* Badge styles */
 .badge-free {
-  background-color: #10b981;
+  background-color: var(--bf-a9);
   color: white;
   padding: 2px 10px;
   border-radius: 9999px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: var(--fw-medium);
   text-transform: uppercase;
 }
 
 .badge-paid {
-  background-color: var(--color-primary);
+  background-color: var(--bf-violet);
   color: white;
   padding: 2px 10px;
   border-radius: 9999px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: var(--fw-medium);
 }
 
 /* Accordion for FAQ */
@@ -53,7 +141,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: #1a1a1a;
+  background: var(--bf-a10);
 }
 
 /* Star rating */

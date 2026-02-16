@@ -543,7 +543,7 @@ export default function SecurePDFReader({
           <p className="text-gray-600 mb-6">{error}</p>
           <Link
             href="/dashboard/produits"
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center gap-2 bg-[#80368D] text-white px-6 py-3 rounded-lg hover:bg-[#6a2d76] transition-colors"
           >
             <ChevronLeft size={18} />
             Retour à mes produits
@@ -670,8 +670,8 @@ export default function SecurePDFReader({
         {loading ? (
           <div className="flex flex-col items-center justify-center text-gray-400 gap-4 h-full">
             <div className="relative">
-              <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-600 border-t-blue-500" />
-              <Shield size={20} className="absolute inset-0 m-auto text-blue-400" />
+              <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-600 border-t-[#80368D]" />
+              <Shield size={20} className="absolute inset-0 m-auto text-[#80368D]" />
             </div>
             <div className="text-center">
               <p className="font-medium">Chargement sécurisé...</p>
@@ -690,7 +690,7 @@ export default function SecurePDFReader({
       {/* ─── Barre de progression ────────────────────────────── */}
       <div className="h-1 bg-gray-800 shrink-0">
         <div
-          className="h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-300"
+          className="h-full bg-gradient-to-r from-[#80368D] to-[#9b4ba8] transition-all duration-300"
           style={{ width: `${(pageNum / totalPages) * 100}%` }}
         />
       </div>

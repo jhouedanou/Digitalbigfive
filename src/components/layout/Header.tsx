@@ -20,8 +20,8 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl font-bold text-gray-900">Big Five</span>
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xl font-black text-[#80368D]">Big Five</span>
+            <span className="text-xs bg-[#D0E4F2] text-[#29358B] px-2 py-0.5 rounded-full font-medium">
               Ressources
             </span>
           </Link>
@@ -33,8 +33,8 @@ export default function Header() {
                 href={link.href}
                 className={`text-sm font-medium transition-colors ${
                   pathname === link.href
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "text-[#80368D]"
+                    : "text-gray-600 hover:text-[#29358B]"
                 }`}
               >
                 {link.label}
@@ -48,11 +48,11 @@ export default function Header() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-1.5 text-sm font-medium text-green-600 hover:text-green-700 transition-colors"
+                  className="flex items-center gap-1.5 text-sm font-medium text-[#80368D] hover:text-[#6a2d76] transition-colors"
                 >
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#80368D] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#80368D]"></span>
                   </span>
                   Mon espace
                 </Link>
@@ -100,12 +100,12 @@ export default function Header() {
                 <div className="flex items-center gap-3 py-2">
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-1.5 text-sm font-medium text-green-600"
+                    className="flex items-center gap-1.5 text-sm font-medium text-[#80368D]"
                     onClick={() => setMobileOpen(false)}
                   >
                     <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#80368D] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#80368D]"></span>
                     </span>
                     Mon espace
                   </Link>

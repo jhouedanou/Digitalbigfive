@@ -24,7 +24,7 @@ export default async function MyProductsPage() {
           </p>
           <Link
             href="/?access=paid"
-            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
+            className="inline-block bg-[#80368D] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#6a2d76]"
           >
             Découvrir nos produits
           </Link>
@@ -52,7 +52,7 @@ export default async function MyProductsPage() {
                 </p>
                 <Link
                   href={`/dashboard/reader/${order.resource.id}`}
-                  className="block w-full bg-blue-600 text-white text-center py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+                  className="block w-full bg-[#80368D] text-white text-center py-2 rounded-lg text-sm font-medium hover:bg-[#6a2d76]"
                 >
                   Lire en ligne
                 </Link>

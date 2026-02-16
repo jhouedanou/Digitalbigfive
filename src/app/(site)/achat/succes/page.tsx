@@ -63,7 +63,7 @@ function SuccessContent() {
         </p>
         <Link
           href="/produits"
-          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
+          className="inline-block bg-[#80368D] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#6a2d76]"
         >
           Retour aux produits
         </Link>
@@ -84,7 +84,7 @@ function SuccessContent() {
         </p>
         <Link
           href="/dashboard/produits"
-          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
+          className="inline-block bg-[#80368D] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#6a2d76]"
         >
           Accéder à mon espace
         </Link>
@@ -104,7 +104,7 @@ function SuccessContent() {
       </p>
       <Link
         href="/dashboard/produits"
-        className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
+        className="inline-block bg-[#80368D] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#6a2d76]"
       >
         Accéder à mes produits
       </Link>
