@@ -29,14 +29,14 @@ export default async function MyProductsPage() {
         
         {orders.length > 0 && (
           <Link
-            href="/dashboard/reader"
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+            href="/dashboard/bibliotheque"
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-[#80368D] to-[#29358B] text-white rounded-lg hover:opacity-90 transition"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
             </svg>
-            Bibliothèque offline
+            📱 Installer l'app bibliothèque
           </Link>
         )}
       </div>

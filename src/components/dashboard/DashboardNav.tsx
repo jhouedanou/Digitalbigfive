@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/providers/SessionProvider";
-import { LayoutDashboard, BookOpen, Receipt, User, Star, LogOut } from "lucide-react";
+import { LayoutDashboard, BookOpen, Receipt, User, Star, LogOut, Library } from "lucide-react";
 
 interface DashboardNavProps {
   user: { name: string; role: string };
@@ -16,6 +16,7 @@ export default function DashboardNav({ user }: DashboardNavProps) {
   const links = [
     { href: "/dashboard", label: "Accueil", icon: LayoutDashboard },
     { href: "/dashboard/produits", label: "Mes produits", icon: BookOpen },
+    { href: "/dashboard/bibliotheque", label: "Bibliothèque", icon: Library },
     { href: "/dashboard/historique", label: "Historique", icon: Receipt },
     { href: "/dashboard/avis", label: "Mes avis", icon: Star },
     { href: "/dashboard/profil", label: "Profil", icon: User },

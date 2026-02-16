@@ -1,0 +1,54 @@
+{
+  "name": "Ma Bibliothèque",
+  "short_name": "Bibliothèque",
+  "description": "Lisez vos livres numériques hors ligne - Digital Big Five",
+  "start_url": "/library",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "categories": ["books", "education"],
+  "icons": [
+    {
+      "src": "/icons/library-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/library-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/library-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshots/library-narrow.png",
+      "sizes": "640x1136",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ma Bibliothèque",
+      "short_name": "Bibliothèque",
+      "description": "Accéder à vos livres",
+      "url": "/library",
+      "icons": [{ "src": "/icons/library-icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false,
+  "scope": "/library",
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
+}

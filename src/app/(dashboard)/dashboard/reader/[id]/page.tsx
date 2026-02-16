@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import SimplePDFReader from "@/components/dashboard/SimplePDFReader";
+import FlipPDFReader from "@/components/dashboard/FlipPDFReader";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -31,7 +31,7 @@ export default async function ReaderPage({ params }: PageProps) {
   if (!resource) notFound();
 
   return (
-    <SimplePDFReader
+    <FlipPDFReader
       resourceId={resourceId}
       title={resource.title}
       userEmail={session.user.email}
