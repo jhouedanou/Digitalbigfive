@@ -299,194 +299,200 @@ export default function DownloadAppButton({
   // ═══════════════════════════════════════════════
   if (variant === "full") {
     return (
-      <div className="bg-gradient-to-br from-[#1A1F2B] to-[#2c2c3e] rounded-2xl p-6 sm:p-8 border border-white/10">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#80368D] to-[#29358B] flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-900/40">
-            <svg viewBox="0 0 512 512" className="w-10 h-10">
-              <g transform="translate(100, 80)">
-                <rect
-                  x="40"
-                  y="60"
-                  width="220"
-                  height="280"
-                  rx="8"
-                  fill="white"
-                  opacity="0.9"
-                />
-                <circle cx="260" cy="280" r="50" fill="#29358B" />
-                <path
-                  d="M235 280 l15 15 l30 -30"
-                  stroke="white"
-                  strokeWidth="8"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </g>
-            </svg>
+      <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-gradient-to-br from-[#f8f7ff] via-white to-[#f0eef9] p-8 sm:p-10 shadow-sm">
+        {/* Decorative background circles */}
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#29358B]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-[#80368D]/5 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10">
+          {/* Header */}
+          <div className="flex items-center gap-5 mb-8">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#80368D] to-[#29358B] flex items-center justify-center flex-shrink-0 shadow-md">
+              <svg viewBox="0 0 512 512" className="w-8 h-8">
+                <g transform="translate(100, 80)">
+                  <rect
+                    x="40"
+                    y="60"
+                    width="220"
+                    height="280"
+                    rx="8"
+                    fill="white"
+                    opacity="0.9"
+                  />
+                  <circle cx="260" cy="280" r="50" fill="#29358B" />
+                  <path
+                    d="M235 280 l15 15 l30 -30"
+                    stroke="white"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </g>
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">
+                Télécharger Big Five Digital
+              </h2>
+              <p className="text-gray-500 text-sm mt-0.5">
+                Accédez à vos livres hors-ligne depuis votre{" "}
+                {isDesktop ? "ordinateur" : "appareil"}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">
-              Télécharger Big Five Digital
-            </h2>
-            <p className="text-gray-400 text-sm mt-1">
-              Accédez à vos livres hors-ligne depuis votre{" "}
-              {isDesktop ? "ordinateur" : "appareil"}
+
+          {/* Bouton principal */}
+          <div className="mb-5">
+            <button
+              onClick={handleAction}
+              disabled={installing}
+              className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#80368D] to-[#29358B] hover:from-[#9040A0] hover:to-[#3545A0] text-white font-semibold rounded-2xl transition-all shadow-md hover:shadow-lg disabled:opacity-70"
+            >
+              {installing ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <PlatformIcon className="w-5 h-5" />
+              )}
+              <span>{info.downloadLabel}</span>
+              {isDesktop && <ExternalLink className="w-4 h-4 ml-1 opacity-60" />}
+            </button>
+            <p className="text-center text-gray-400 text-xs mt-2.5">
+              {info.description}
             </p>
           </div>
+
+          {/* Autres plateformes */}
+          {isDesktop && (
+            <>
+              <button
+                onClick={() => setShowAllPlatforms(!showAllPlatforms)}
+                className="w-full flex items-center justify-center gap-2 text-gray-400 hover:text-gray-600 text-sm py-2 transition"
+              >
+                <span>Autres plateformes</span>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${showAllPlatforms ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {showAllPlatforms && (
+                <div className="mt-3 space-y-2 border-t border-gray-200/80 pt-4">
+                  {platform !== "windows" && (
+                    <a
+                      href={DOWNLOAD_URLS.windows}
+                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200/60 rounded-2xl transition group"
+                    >
+                      <Monitor className="w-5 h-5 text-gray-400 group-hover:text-gray-700" />
+                      <div className="flex-1">
+                        <span className="text-gray-800 text-sm font-medium">
+                          Windows
+                        </span>
+                        <span className="text-gray-400 text-xs ml-2">
+                          .exe — Windows 10/11
+                        </span>
+                      </div>
+                      <Download className="w-4 h-4 text-gray-400" />
+                    </a>
+                  )}
+
+                  {platform !== "mac" && (
+                    <a
+                      href={DOWNLOAD_URLS.mac_arm64}
+                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200/60 rounded-2xl transition group"
+                    >
+                      <Laptop className="w-5 h-5 text-gray-400 group-hover:text-gray-700" />
+                      <div className="flex-1">
+                        <span className="text-gray-800 text-sm font-medium">
+                          macOS
+                        </span>
+                        <span className="text-gray-400 text-xs ml-2">
+                          .dmg — Apple Silicon (M1/M2/M3)
+                        </span>
+                      </div>
+                      <Download className="w-4 h-4 text-gray-400" />
+                    </a>
+                  )}
+
+                  {platform !== "mac" && (
+                    <a
+                      href={DOWNLOAD_URLS.mac_x64}
+                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200/60 rounded-2xl transition group"
+                    >
+                      <Laptop className="w-5 h-5 text-gray-400 group-hover:text-gray-700" />
+                      <div className="flex-1">
+                        <span className="text-gray-800 text-sm font-medium">
+                          macOS
+                        </span>
+                        <span className="text-gray-400 text-xs ml-2">
+                          .dmg — Intel
+                        </span>
+                      </div>
+                      <Download className="w-4 h-4 text-gray-400" />
+                    </a>
+                  )}
+
+                  {platform !== "linux" && (
+                    <a
+                      href={DOWNLOAD_URLS.linux_appimage}
+                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200/60 rounded-2xl transition group"
+                    >
+                      <Monitor className="w-5 h-5 text-gray-400 group-hover:text-gray-700" />
+                      <div className="flex-1">
+                        <span className="text-gray-800 text-sm font-medium">
+                          Linux
+                        </span>
+                        <span className="text-gray-400 text-xs ml-2">
+                          .AppImage — Universel
+                        </span>
+                      </div>
+                      <Download className="w-4 h-4 text-gray-400" />
+                    </a>
+                  )}
+
+                  {platform === "linux" && (
+                    <a
+                      href={DOWNLOAD_URLS.linux_deb}
+                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200/60 rounded-2xl transition group"
+                    >
+                      <Monitor className="w-5 h-5 text-gray-400 group-hover:text-gray-700" />
+                      <div className="flex-1">
+                        <span className="text-gray-800 text-sm font-medium">
+                          Linux .deb
+                        </span>
+                        <span className="text-gray-400 text-xs ml-2">
+                          Ubuntu / Debian
+                        </span>
+                      </div>
+                      <Download className="w-4 h-4 text-gray-400" />
+                    </a>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Lien PWA alternatif pour desktop */}
+          {isDesktop && deferredPrompt && (
+            <div className="mt-4 pt-4 border-t border-gray-200/80 text-center">
+              <button
+                onClick={async () => {
+                  if (deferredPrompt) {
+                    await deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === "accepted") setInstalled(true);
+                    setDeferredPrompt(null);
+                  }
+                }}
+                className="text-gray-400 hover:text-[#80368D] text-sm transition inline-flex items-center gap-1"
+              >
+                <Chrome className="w-4 h-4" />
+                <span>
+                  Ou installer en tant qu&apos;app web (PWA)
+                </span>
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* Bouton principal — recommandé pour l'OS détecté */}
-        <div className="mb-4">
-          <button
-            onClick={handleAction}
-            disabled={installing}
-            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#80368D] to-[#29358B] hover:from-[#9040A0] hover:to-[#3545A0] text-white font-semibold rounded-xl transition-all shadow-lg shadow-purple-900/30 disabled:opacity-70"
-          >
-            {installing ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <PlatformIcon className="w-5 h-5" />
-            )}
-            <span>{info.downloadLabel}</span>
-            {isDesktop && <ExternalLink className="w-4 h-4 ml-1 opacity-60" />}
-          </button>
-          <p className="text-center text-gray-500 text-xs mt-2">
-            {info.description}
-          </p>
-        </div>
-
-        {/* Autres plateformes */}
-        {isDesktop && (
-          <>
-            <button
-              onClick={() => setShowAllPlatforms(!showAllPlatforms)}
-              className="w-full flex items-center justify-center gap-2 text-gray-400 hover:text-gray-300 text-sm py-2 transition"
-            >
-              <span>Autres plateformes</span>
-              <ChevronDown
-                className={`w-4 h-4 transition-transform ${showAllPlatforms ? "rotate-180" : ""}`}
-              />
-            </button>
-
-            {showAllPlatforms && (
-              <div className="mt-3 space-y-2 border-t border-white/10 pt-4">
-                {platform !== "windows" && (
-                  <a
-                    href={DOWNLOAD_URLS.windows}
-                    className="flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition group"
-                  >
-                    <Monitor className="w-5 h-5 text-gray-400 group-hover:text-white" />
-                    <div className="flex-1">
-                      <span className="text-white text-sm font-medium">
-                        Windows
-                      </span>
-                      <span className="text-gray-500 text-xs ml-2">
-                        .exe — Windows 10/11
-                      </span>
-                    </div>
-                    <Download className="w-4 h-4 text-gray-500" />
-                  </a>
-                )}
-
-                {platform !== "mac" && (
-                  <a
-                    href={DOWNLOAD_URLS.mac_arm64}
-                    className="flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition group"
-                  >
-                    <Laptop className="w-5 h-5 text-gray-400 group-hover:text-white" />
-                    <div className="flex-1">
-                      <span className="text-white text-sm font-medium">
-                        macOS
-                      </span>
-                      <span className="text-gray-500 text-xs ml-2">
-                        .dmg — Apple Silicon (M1/M2/M3)
-                      </span>
-                    </div>
-                    <Download className="w-4 h-4 text-gray-500" />
-                  </a>
-                )}
-
-                {platform !== "mac" && (
-                  <a
-                    href={DOWNLOAD_URLS.mac_x64}
-                    className="flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition group"
-                  >
-                    <Laptop className="w-5 h-5 text-gray-400 group-hover:text-white" />
-                    <div className="flex-1">
-                      <span className="text-white text-sm font-medium">
-                        macOS
-                      </span>
-                      <span className="text-gray-500 text-xs ml-2">
-                        .dmg — Intel
-                      </span>
-                    </div>
-                    <Download className="w-4 h-4 text-gray-500" />
-                  </a>
-                )}
-
-                {platform !== "linux" && (
-                  <a
-                    href={DOWNLOAD_URLS.linux_appimage}
-                    className="flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition group"
-                  >
-                    <Monitor className="w-5 h-5 text-gray-400 group-hover:text-white" />
-                    <div className="flex-1">
-                      <span className="text-white text-sm font-medium">
-                        Linux
-                      </span>
-                      <span className="text-gray-500 text-xs ml-2">
-                        .AppImage — Universel
-                      </span>
-                    </div>
-                    <Download className="w-4 h-4 text-gray-500" />
-                  </a>
-                )}
-
-                {platform === "linux" && (
-                  <a
-                    href={DOWNLOAD_URLS.linux_deb}
-                    className="flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition group"
-                  >
-                    <Monitor className="w-5 h-5 text-gray-400 group-hover:text-white" />
-                    <div className="flex-1">
-                      <span className="text-white text-sm font-medium">
-                        Linux .deb
-                      </span>
-                      <span className="text-gray-500 text-xs ml-2">
-                        Ubuntu / Debian
-                      </span>
-                    </div>
-                    <Download className="w-4 h-4 text-gray-500" />
-                  </a>
-                )}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Lien PWA alternatif pour desktop */}
-        {isDesktop && deferredPrompt && (
-          <div className="mt-4 pt-4 border-t border-white/10 text-center">
-            <button
-              onClick={async () => {
-                if (deferredPrompt) {
-                  await deferredPrompt.prompt();
-                  const { outcome } = await deferredPrompt.userChoice;
-                  if (outcome === "accepted") setInstalled(true);
-                  setDeferredPrompt(null);
-                }
-              }}
-              className="text-gray-400 hover:text-[#FF9F0A] text-sm transition inline-flex items-center gap-1"
-            >
-              <Chrome className="w-4 h-4" />
-              <span>
-                Ou installer en tant qu&apos;app web (PWA)
-              </span>
-            </button>
-          </div>
-        )}
       </div>
     );
   }

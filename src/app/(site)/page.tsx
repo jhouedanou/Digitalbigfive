@@ -43,11 +43,6 @@ export default async function LibraryPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      {/* Download App Section */}
-      <div className="mb-10">
-        <DownloadAppButton variant="full" />
-      </div>
-
       {/* Filters */}
       <div className="mb-8">
         <Suspense fallback={<div className="h-10" />}>
@@ -91,6 +86,11 @@ export default async function LibraryPage({ searchParams }: PageProps) {
           </p>
         </div>
       )}
+
+      {/* Download App Section — before footer */}
+      <div className="mt-16 mb-4">
+        <DownloadAppButton variant="full" />
+      </div>
     </div>
   );
 }
