@@ -22,7 +22,8 @@ const GITHUB_RELEASES_BASE = `https://github.com/${GITHUB_REPO}/releases/latest/
 
 const DOWNLOAD_URLS = {
   windows: `${GITHUB_RELEASES_BASE}/Big%20Five%20Digital%20Setup%20${APP_VERSION}.exe`,
-  mac: `${GITHUB_RELEASES_BASE}/Big%20Five%20Digital-${APP_VERSION}-universal.dmg`,
+  mac_arm64: `${GITHUB_RELEASES_BASE}/Big%20Five%20Digital-${APP_VERSION}-arm64.dmg`,
+  mac_x64: `${GITHUB_RELEASES_BASE}/Big%20Five%20Digital-${APP_VERSION}.dmg`,
   linux_appimage: `${GITHUB_RELEASES_BASE}/Big%20Five%20Digital-${APP_VERSION}.AppImage`,
   linux_deb: `${GITHUB_RELEASES_BASE}/big-five-digital_${APP_VERSION}_amd64.deb`,
 } as const;
@@ -84,7 +85,7 @@ const PLATFORM_INFO: Record<
     label: "macOS",
     icon: Laptop,
     downloadLabel: "Télécharger pour Mac",
-    description: "macOS 12+ — Fichier .dmg (Intel & Apple Silicon)",
+    description: "macOS 12+ — Fichier .dmg",
   },
   linux: {
     label: "Linux",
@@ -167,7 +168,10 @@ export default function DownloadAppButton({
       return;
     }
     if (platform === "mac") {
-      window.open(DOWNLOAD_URLS.mac, "_blank");
+      // Detect Apple Silicon vs Intel
+      const isAppleSilicon = typeof navigator !== "undefined" && 
+        (/arm/i.test(navigator.platform) || (navigator as any).userAgentData?.architecture === "arm");
+      window.open(isAppleSilicon ? DOWNLOAD_URLS.mac_arm64 : DOWNLOAD_URLS.mac_x64, "_blank");
       return;
     }
     if (platform === "linux") {
@@ -388,7 +392,7 @@ export default function DownloadAppButton({
 
                 {platform !== "mac" && (
                   <a
-                    href={DOWNLOAD_URLS.mac}
+                    href={DOWNLOAD_URLS.mac_arm64}
                     className="flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition group"
                   >
                     <Laptop className="w-5 h-5 text-gray-400 group-hover:text-white" />
@@ -397,7 +401,25 @@ export default function DownloadAppButton({
                         macOS
                       </span>
                       <span className="text-gray-500 text-xs ml-2">
-                        .dmg — Intel & Apple Silicon
+                        .dmg — Apple Silicon (M1/M2/M3)
+                      </span>
+                    </div>
+                    <Download className="w-4 h-4 text-gray-500" />
+                  </a>
+                )}
+
+                {platform !== "mac" && (
+                  <a
+                    href={DOWNLOAD_URLS.mac_x64}
+                    className="flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition group"
+                  >
+                    <Laptop className="w-5 h-5 text-gray-400 group-hover:text-white" />
+                    <div className="flex-1">
+                      <span className="text-white text-sm font-medium">
+                        macOS
+                      </span>
+                      <span className="text-gray-500 text-xs ml-2">
+                        .dmg — Intel
                       </span>
                     </div>
                     <Download className="w-4 h-4 text-gray-500" />

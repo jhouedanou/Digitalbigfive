@@ -53,8 +53,8 @@ jobs:
       - name: Compile Electron TypeScript
         run: npx tsc -p electron/tsconfig.json
 
-      - name: Build macOS DMG
-        run: npx electron-builder --mac --universal --publish never
+      - name: Build macOS DMGs
+        run: npx electron-builder --mac --x64 --arm64 --publish never
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
