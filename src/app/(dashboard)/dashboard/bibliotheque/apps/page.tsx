@@ -56,6 +56,10 @@ interface PlatformApp {
   requirements?: string;
 }
 
+const APP_VERSION = "1.0.1";
+const GITHUB_REPO = "jhouedanou/Digitalbigfive";
+const GITHUB_RELEASES_BASE = `https://github.com/${GITHUB_REPO}/releases/latest/download`;
+
 const PLATFORMS: PlatformApp[] = [
   {
     id: "ios",
@@ -65,7 +69,7 @@ const PLATFORMS: PlatformApp[] = [
     description: "Application native pour iOS avec lecture hors ligne et synchronisation iCloud",
     downloadUrl: "https://apps.apple.com/app/ma-bibliotheque",
     status: "coming-soon",
-    version: "1.0.0",
+    version: APP_VERSION,
     size: "45 MB",
     requirements: "iOS 15.0 ou ultérieur",
   },
@@ -77,7 +81,7 @@ const PLATFORMS: PlatformApp[] = [
     description: "Application pour tous les appareils Android avec mode hors ligne",
     downloadUrl: "https://play.google.com/store/apps/details?id=com.digitalbigfive.library",
     status: "coming-soon",
-    version: "1.0.0",
+    version: APP_VERSION,
     size: "38 MB",
     requirements: "Android 8.0 ou ultérieur",
   },
@@ -87,10 +91,10 @@ const PLATFORMS: PlatformApp[] = [
     platform: "Mac",
     icon: Apple,
     description: "Application native pour Mac avec intégration système et Touch Bar",
-    downloadUrl: "/downloads/library-macos.dmg",
-    status: "coming-soon",
-    version: "1.0.0",
-    size: "62 MB",
+    downloadUrl: `${GITHUB_RELEASES_BASE}/Big.Five.Digital-${APP_VERSION}-arm64.dmg`,
+    status: "available",
+    version: APP_VERSION,
+    size: "217 MB",
     requirements: "macOS 12.0 (Monterey) ou ultérieur",
   },
   {
@@ -99,10 +103,10 @@ const PLATFORMS: PlatformApp[] = [
     platform: "PC",
     icon: WindowsIcon,
     description: "Application Windows avec support du mode tablette et stylet",
-    downloadUrl: "/downloads/library-windows.exe",
-    status: "coming-soon",
-    version: "1.0.0",
-    size: "58 MB",
+    downloadUrl: `${GITHUB_RELEASES_BASE}/Big.Five.Digital.Setup.${APP_VERSION}.exe`,
+    status: "available",
+    version: APP_VERSION,
+    size: "168 MB",
     requirements: "Windows 10/11 (64-bit)",
   },
   {
@@ -111,10 +115,10 @@ const PLATFORMS: PlatformApp[] = [
     platform: "Ubuntu, Fedora, Debian...",
     icon: LinuxIcon,
     description: "Application AppImage compatible avec toutes les distributions",
-    downloadUrl: "/downloads/library-linux.AppImage",
-    status: "coming-soon",
-    version: "1.0.0",
-    size: "55 MB",
+    downloadUrl: `${GITHUB_RELEASES_BASE}/Big.Five.Digital-${APP_VERSION}.AppImage`,
+    status: "available",
+    version: APP_VERSION,
+    size: "284 MB",
     requirements: "Ubuntu 20.04+, Fedora 35+, ou équivalent",
   },
 ];
