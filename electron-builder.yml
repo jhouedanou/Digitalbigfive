@@ -69,6 +69,7 @@ linux:
   icon: electron/assets/icon.png
   category: Education
   executableName: big-five-digital
+  maintainer: "Big Five Digital <contact@bigfivedigital.com>"
 
 protocols:
   - name: Big Five Digital

@@ -2,6 +2,10 @@
   "name": "digitalbigfive",
   "version": "1.0.0",
   "description": "Big Five Digital - Ressources et produits digitaux premium",
+  "author": {
+    "name": "Big Five Digital",
+    "email": "contact@bigfivedigital.com"
+  },
   "main": "electron/dist/main.js",
   "scripts": {
     "dev": "next dev",
