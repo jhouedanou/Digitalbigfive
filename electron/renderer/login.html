@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Big Five Digital — Connexion</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card slide-up">
+      <div class="login-logo">
+        <h2>📚 Big Five Digital</h2>
+        <p>Connectez-vous pour accéder à vos livres</p>
+      </div>
+
+      <div id="error-msg" class="login-error"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Adresse email</label>
+          <input
+            type="email"
+            id="email"
+            class="form-input"
+            placeholder="votre@email.com"
+            required
+            autocomplete="email"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">Mot de passe</label>
+          <input
+            type="password"
+            id="password"
+            class="form-input"
+            placeholder="••••••••"
+            required
+            autocomplete="current-password"
+          >
+        </div>
+
+        <button type="submit" id="login-btn" class="btn btn-primary login-btn">
+          Se connecter
+        </button>
+      </form>
+
+      <div style="text-align:center; margin-top: 24px;">
+        <p style="color: var(--text-muted); font-size: 12px;">
+          Big Five Digital — Votre bibliothèque numérique
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    let supabase = null;
+    let appConfig = null;
+
+    async function init() {
+      // Get config from Electron main process
+      appConfig = await window.electronAPI.getConfig();
+
+      if (!appConfig.supabaseUrl || !appConfig.supabaseKey) {
+        showError("Configuration Supabase manquante. Vérifiez votre fichier .env.local");
+        return;
+      }
+
+      supabase = window.supabase.createClient(appConfig.supabaseUrl, appConfig.supabaseKey);
+
+      // Check if already logged in
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        // Verify the token is still valid
+        const { data: { user } } = await supabase.auth.getUser(session.access_token);
+        if (user) {
+          goToLibrary();
+          return;
+        }
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById("error-msg");
+      el.textContent = msg;
+      el.classList.add("visible");
+    }
+
+    function hideError() {
+      document.getElementById("error-msg").classList.remove("visible");
+    }
+
+    function goToLibrary() {
+      window.electronAPI.navigate("library.html");
+    }
+
+    // Login form
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideError();
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const btn = document.getElementById("login-btn");
+
+      if (!email || !password) {
+        showError("Veuillez remplir tous les champs");
+        return;
+      }
+
+      btn.textContent = "Connexion en cours...";
+      btn.disabled = true;
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          showError(error.message === "Invalid login credentials"
+            ? "Email ou mot de passe incorrect"
+            : error.message
+          );
+          btn.textContent = "Se connecter";
+          btn.disabled = false;
+          return;
+        }
+
+        if (data.session) {
+          goToLibrary();
+        }
+      } catch (err) {
+        showError("Impossible de se connecter. Vérifiez votre connexion internet.");
+        btn.textContent = "Se connecter";
+        btn.disabled = false;
+      }
+    });
+
+    // Initialize
+    init();
+  </script>
+</body>
+</html>

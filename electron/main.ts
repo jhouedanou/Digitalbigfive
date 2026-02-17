@@ -10,37 +10,34 @@ import {
 import { autoUpdater } from "electron-updater";
 import log from "electron-log";
 import * as path from "path";
+import * as fs from "fs";
 
-// Configure logging
+console.log("[MAIN] Starting Big Five Digital Electron App...");
+console.log("[MAIN] __dirname:", __dirname);
+console.log("[MAIN] app.isPackaged:", app.isPackaged);
+
+// ─── Configuration ──────────────────────────────────────────
 log.transports.file.level = "info";
 autoUpdater.logger = log;
 
-// Constants
-const APP_URL = "https://digitalbigfive.vercel.app";
-const DEV_URL = "http://localhost:3000";
 const PROTOCOL = "bigfive";
-
-const ALLOWED_DOMAINS = [
-  "digitalbigfive.vercel.app",
-  "localhost",
-  // Supabase
-  "jqsyxftdargaottivpeh.supabase.co",
-  "supabase.co",
-  "supabase.com",
-  // PayTech / Moneroo
-  "paytech.sn",
-  "moneroo.io",
-  "api.moneroo.io",
-  // Auth providers
-  "accounts.google.com",
-];
+const API_URL_PROD = "https://digitalbigfive.vercel.app";
+const API_URL_DEV = "http://localhost:3000";
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
 
-function getBaseUrl(): string {
-  return app.isPackaged ? APP_URL : DEV_URL;
+// ─── Paths ──────────────────────────────────────────────────
+function getApiUrl(): string {
+  return app.isPackaged ? API_URL_PROD : API_URL_DEV;
+}
+
+function getRendererPath(file: string): string {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, "renderer", file);
+  }
+  return path.join(__dirname, "..", "renderer", file);
 }
 
 function getPreloadPath(): string {
@@ -54,42 +51,78 @@ function getIconPath(name: string): string {
   return path.join(__dirname, "assets", name);
 }
 
+function getPdfsDir(): string {
+  const dir = path.join(app.getPath("userData"), "pdfs");
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  return dir;
+}
+
+// ─── Environment variables ──────────────────────────────────
+function loadEnvConfig(): { supabaseUrl: string; supabaseKey: string } {
+  if (!app.isPackaged) {
+    try {
+      const envPath = path.join(__dirname, "..", "..", ".env.local");
+      if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, "utf-8");
+        const vars: Record<string, string> = {};
+        envContent.split("\n").forEach((line) => {
+          const match = line.match(/^([^#=]+)=(.*)$/);
+          if (match) {
+            vars[match[1].trim()] = match[2].trim().replace(/^["']|["']$/g, "");
+          }
+        });
+        if (vars.NEXT_PUBLIC_SUPABASE_URL && vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) {
+          return {
+            supabaseUrl: vars.NEXT_PUBLIC_SUPABASE_URL,
+            supabaseKey: vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
+          };
+        }
+      }
+    } catch (err) {
+      log.error("Failed to read .env.local:", err);
+    }
+  }
+
+  return {
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || "",
+  };
+}
+
+// ─── Window ─────────────────────────────────────────────────
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 1280,
+    width: 1200,
     height: 800,
-    minWidth: 800,
+    minWidth: 900,
     minHeight: 600,
-    icon: getIconPath(
-      process.platform === "win32" ? "icon.ico" : "icon.png"
-    ),
+    icon: getIconPath(process.platform === "win32" ? "icon.ico" : "icon.png"),
     webPreferences: {
       preload: getPreloadPath(),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
-      // Persist storage (cookies, localStorage, IndexedDB, service workers)
-      partition: "persist:bigfive",
+      sandbox: false,
     },
     show: false,
+    backgroundColor: "#1c1c1e",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     autoHideMenuBar: true,
+    title: "Big Five Digital",
   });
 
-  // Show window when ready
   mainWindow.once("ready-to-show", () => {
     mainWindow?.show();
   });
 
-  // Load the app
-  mainWindow.loadURL(getBaseUrl());
+  // Load login page
+  mainWindow.loadFile(getRendererPath("login.html"));
 
-  // Open DevTools in dev mode
   if (!app.isPackaged) {
     mainWindow.webContents.openDevTools({ mode: "detach" });
   }
 
-  // Minimize to tray instead of closing
   mainWindow.on("close", (event) => {
     if (!isQuitting) {
       event.preventDefault();
@@ -101,192 +134,223 @@ function createWindow(): void {
     mainWindow = null;
   });
 
-  // Security: restrict navigation to allowed domains
-  mainWindow.webContents.on("will-navigate", (event, url) => {
-    if (!isAllowedUrl(url)) {
-      event.preventDefault();
-      log.warn(`Blocked navigation to: ${url}`);
-    }
+  // Block all external navigation — we only load local files
+  mainWindow.webContents.on("will-navigate", (event) => {
+    event.preventDefault();
   });
 
-  // Security: handle new window requests (open external links in browser)
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (isAllowedUrl(url)) {
-      shell.openExternal(url);
-    } else {
-      log.warn(`Blocked popup to: ${url}`);
-    }
+    shell.openExternal(url);
     return { action: "deny" };
   });
+}
 
-  // Monitor online/offline status
-  mainWindow.webContents.on("did-finish-load", () => {
-    mainWindow?.webContents.send("online-status", true);
+// ─── IPC ────────────────────────────────────────────────────
+function setupIPC(): void {
+  const envConfig = loadEnvConfig();
+
+  ipcMain.handle("get-config", () => ({
+    apiUrl: getApiUrl(),
+    supabaseUrl: envConfig.supabaseUrl,
+    supabaseKey: envConfig.supabaseKey,
+    version: app.getVersion(),
+    platform: process.platform,
+  }));
+
+  // ─── Navigation ───────────────────────────────────────────
+  ipcMain.on("navigate", (_event, page: string) => {
+    const filePath = getRendererPath(page);
+    if (fs.existsSync(filePath)) {
+      mainWindow?.loadFile(filePath);
+    }
   });
 
-  mainWindow.webContents.on(
-    "did-fail-load",
-    (_event, errorCode, errorDescription) => {
-      log.error(`Load failed: ${errorCode} - ${errorDescription}`);
-      if (errorCode === -106 || errorCode === -105) {
-        // ERR_INTERNET_DISCONNECTED or ERR_NAME_NOT_RESOLVED
-        mainWindow?.webContents.send("online-status", false);
+  ipcMain.on("navigate-reader", (_event, bookId: string, title: string) => {
+    mainWindow?.loadFile(getRendererPath("reader.html"));
+    mainWindow?.webContents.once("did-finish-load", () => {
+      mainWindow?.webContents.send("open-book", { bookId, title });
+    });
+  });
+
+  // ─── PDF Local Storage ────────────────────────────────────
+  ipcMain.handle(
+    "download-pdf",
+    async (_event, bookId: string, accessToken: string) => {
+      try {
+        const apiUrl = getApiUrl();
+        const response = await fetch(`${apiUrl}/api/pdf/${bookId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const buffer = Buffer.from(await response.arrayBuffer());
+        const filePath = path.join(getPdfsDir(), `${bookId}.pdf`);
+        fs.writeFileSync(filePath, buffer);
+
+        log.info(`PDF saved: ${bookId} (${buffer.length} bytes)`);
+        return { success: true, path: filePath, size: buffer.length };
+      } catch (err) {
+        log.error(`PDF download failed: ${bookId}`, err);
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "Erreur de téléchargement",
+        };
       }
     }
   );
-}
 
-function isAllowedUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    // Allow data: and blob: URLs (used by PDF reader, etc.)
-    if (parsed.protocol === "data:" || parsed.protocol === "blob:") {
-      return true;
+  ipcMain.handle("read-local-pdf", async (_event, bookId: string) => {
+    try {
+      const filePath = path.join(getPdfsDir(), `${bookId}.pdf`);
+      if (!fs.existsSync(filePath)) {
+        return { success: false, error: "PDF non trouvé localement" };
+      }
+      const data = fs.readFileSync(filePath);
+      // Return as Uint8Array for the renderer
+      return { success: true, data: new Uint8Array(data) };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Erreur de lecture",
+      };
     }
-    // Allow the deep link protocol
-    if (parsed.protocol === `${PROTOCOL}:`) {
-      return true;
+  });
+
+  ipcMain.handle("is-pdf-downloaded", (_event, bookId: string) => {
+    const filePath = path.join(getPdfsDir(), `${bookId}.pdf`);
+    if (!fs.existsSync(filePath)) return { downloaded: false };
+    const stats = fs.statSync(filePath);
+    return {
+      downloaded: true,
+      size: stats.size,
+      downloadedAt: stats.mtime.toISOString(),
+    };
+  });
+
+  ipcMain.handle("delete-pdf", (_event, bookId: string) => {
+    try {
+      const filePath = path.join(getPdfsDir(), `${bookId}.pdf`);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : "Erreur" };
     }
-    return ALLOWED_DOMAINS.some(
-      (domain) =>
-        parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)
-    );
-  } catch {
-    return false;
-  }
-}
-
-function createTray(): void {
-  const trayIconPath = getIconPath("tray-icon.png");
-  const icon = nativeImage.createFromPath(trayIconPath);
-  tray = new Tray(icon);
-
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: "Ouvrir Big Five Digital",
-      click: () => {
-        mainWindow?.show();
-        mainWindow?.focus();
-      },
-    },
-    { type: "separator" },
-    {
-      label: "Bibliothèque",
-      click: () => {
-        mainWindow?.show();
-        mainWindow?.focus();
-        mainWindow?.loadURL(`${getBaseUrl()}/library`);
-      },
-    },
-    {
-      label: "Produits",
-      click: () => {
-        mainWindow?.show();
-        mainWindow?.focus();
-        mainWindow?.loadURL(`${getBaseUrl()}/products`);
-      },
-    },
-    { type: "separator" },
-    {
-      label: "Quitter",
-      click: () => {
-        isQuitting = true;
-        app.quit();
-      },
-    },
-  ]);
-
-  tray.setToolTip("Big Five Digital");
-  tray.setContextMenu(contextMenu);
-
-  // Double-click on tray icon opens the window
-  tray.on("double-click", () => {
-    mainWindow?.show();
-    mainWindow?.focus();
-  });
-}
-
-function setupAutoUpdater(): void {
-  if (!app.isPackaged) return;
-
-  autoUpdater.checkForUpdatesAndNotify();
-
-  // Check for updates every 4 hours
-  setInterval(
-    () => {
-      autoUpdater.checkForUpdatesAndNotify();
-    },
-    4 * 60 * 60 * 1000
-  );
-
-  autoUpdater.on("update-available", (info) => {
-    log.info(`Update available: ${info.version}`);
-    mainWindow?.webContents.send("update-available", {
-      version: info.version,
-    });
   });
 
-  autoUpdater.on("update-downloaded", (info) => {
-    log.info(`Update downloaded: ${info.version}`);
-    mainWindow?.webContents.send("update-downloaded", {
-      version: info.version,
-    });
+  ipcMain.handle("list-downloaded-pdfs", () => {
+    try {
+      const dir = getPdfsDir();
+      return fs
+        .readdirSync(dir)
+        .filter((f) => f.endsWith(".pdf"))
+        .map((f) => {
+          const stats = fs.statSync(path.join(dir, f));
+          return {
+            bookId: f.replace(".pdf", ""),
+            size: stats.size,
+            downloadedAt: stats.mtime.toISOString(),
+          };
+        });
+    } catch {
+      return [];
+    }
   });
 
-  autoUpdater.on("error", (error) => {
-    log.error("Auto-update error:", error);
+  ipcMain.handle("get-storage-info", () => {
+    try {
+      const dir = getPdfsDir();
+      const files = fs.readdirSync(dir).filter((f) => f.endsWith(".pdf"));
+      let totalSize = 0;
+      files.forEach((f) => {
+        totalSize += fs.statSync(path.join(dir, f)).size;
+      });
+      return {
+        path: dir,
+        count: files.length,
+        totalSizeMB: Math.round((totalSize / (1024 * 1024)) * 100) / 100,
+      };
+    } catch {
+      return { path: getPdfsDir(), count: 0, totalSizeMB: 0 };
+    }
   });
-}
 
-function setupIPC(): void {
-  ipcMain.handle("app:get-version", () => app.getVersion());
-  ipcMain.handle("app:get-platform", () => process.platform);
-
-  ipcMain.on("navigate", (_event, path: string) => {
-    mainWindow?.loadURL(`${getBaseUrl()}${path}`);
+  ipcMain.on("open-storage-folder", () => {
+    shell.openPath(getPdfsDir());
   });
 
   ipcMain.on("install-update", () => {
     isQuitting = true;
     autoUpdater.quitAndInstall();
   });
-
-  ipcMain.on("window:minimize", () => mainWindow?.minimize());
-  ipcMain.on("window:maximize", () => {
-    if (mainWindow?.isMaximized()) {
-      mainWindow.unmaximize();
-    } else {
-      mainWindow?.maximize();
-    }
-  });
-  ipcMain.on("window:close", () => mainWindow?.close());
 }
 
+// ─── Tray ───────────────────────────────────────────────────
+function createTray(): void {
+  const trayIconPath = getIconPath("tray-icon.png");
+  if (!fs.existsSync(trayIconPath)) return;
+
+  const icon = nativeImage.createFromPath(trayIconPath);
+  tray = new Tray(icon);
+
+  tray.setToolTip("Big Five Digital");
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      {
+        label: "Ouvrir",
+        click: () => {
+          mainWindow?.show();
+          mainWindow?.focus();
+        },
+      },
+      { type: "separator" },
+      {
+        label: "Ma Bibliothèque",
+        click: () => {
+          mainWindow?.show();
+          mainWindow?.focus();
+          mainWindow?.loadFile(getRendererPath("library.html"));
+        },
+      },
+      { type: "separator" },
+      {
+        label: "Quitter",
+        click: () => {
+          isQuitting = true;
+          app.quit();
+        },
+      },
+    ])
+  );
+
+  tray.on("double-click", () => {
+    mainWindow?.show();
+    mainWindow?.focus();
+  });
+}
+
+// ─── Auto Updater ───────────────────────────────────────────
+function setupAutoUpdater(): void {
+  if (!app.isPackaged) return;
+  autoUpdater.checkForUpdatesAndNotify();
+  setInterval(() => autoUpdater.checkForUpdatesAndNotify(), 4 * 60 * 60 * 1000);
+
+  autoUpdater.on("update-downloaded", (info) => {
+    mainWindow?.webContents.send("update-downloaded", { version: info.version });
+  });
+}
+
+// ─── Deep Links ─────────────────────────────────────────────
 function setupDeepLinks(): void {
-  if (process.defaultApp) {
-    if (process.argv.length >= 2) {
-      app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [
-        path.resolve(process.argv[1]),
-      ]);
-    }
+  if (process.defaultApp && process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
   } else {
     app.setAsDefaultProtocolClient(PROTOCOL);
   }
 
-  // Handle deep link on macOS
-  app.on("open-url", (event, url) => {
-    event.preventDefault();
-    handleDeepLink(url);
-  });
-
-  // Handle deep link on Windows/Linux (single instance)
   app.on("second-instance", (_event, commandLine) => {
-    const deepLink = commandLine.find((arg) => arg.startsWith(`${PROTOCOL}://`));
-    if (deepLink) {
-      handleDeepLink(deepLink);
-    }
-
-    // Focus existing window
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.show();
@@ -295,35 +359,26 @@ function setupDeepLinks(): void {
   });
 }
 
-function handleDeepLink(url: string): void {
-  try {
-    const parsed = new URL(url);
-    const routePath = parsed.pathname || "/";
-    log.info(`Deep link: ${url} -> ${routePath}`);
-    mainWindow?.loadURL(`${getBaseUrl()}${routePath}`);
-    mainWindow?.show();
-    mainWindow?.focus();
-  } catch (error) {
-    log.error("Invalid deep link:", error);
-  }
-}
-
-// Ensure single instance
+// ─── App Lifecycle ──────────────────────────────────────────
+console.log("[MAIN] Requesting single instance lock...");
 const gotTheLock = app.requestSingleInstanceLock();
+console.log("[MAIN] Got lock:", gotTheLock);
 
 if (!gotTheLock) {
+  console.log("[MAIN] Another instance running, quitting...");
   app.quit();
 } else {
   setupDeepLinks();
 
   app.whenReady().then(() => {
+    console.log("[MAIN] App ready, creating window...");
     createWindow();
     createTray();
     setupIPC();
     setupAutoUpdater();
+    console.log("[MAIN] All systems initialized.");
 
     app.on("activate", () => {
-      // macOS: re-create window when dock icon is clicked
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
       } else {
@@ -337,8 +392,7 @@ if (!gotTheLock) {
   });
 
   app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") {
-      app.quit();
-    }
+    console.log("[MAIN] All windows closed.");
+    if (process.platform !== "darwin") app.quit();
   });
 }

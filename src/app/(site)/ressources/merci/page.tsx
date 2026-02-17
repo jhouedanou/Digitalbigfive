@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CheckCircle, Mail, Clock, ArrowRight, Sparkles } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 import ProductRecommendations from "@/components/upsell/ProductRecommendations";
-import { getRecommendedProducts } from "@/lib/recommendations";
 
 interface PageProps {
   searchParams: Promise<{
@@ -13,12 +13,29 @@ interface PageProps {
 export default async function ThankYouPage({ searchParams }: PageProps) {
   const params = await searchParams;
   
-  // Fetch recommended paid products based on the downloaded resource's category
-  const recommendedProducts = await getRecommendedProducts(
-    params.category,
-    params.resourceId,
-    3
-  );
+  // Fetch recommended paid products (inline query to avoid client/server boundary issues)
+  const selectFields = {
+    id: true, slug: true, title: true, shortDescription: true,
+    coverImage: true, price: true, originalPrice: true, currency: true,
+    category: true, level: true, resourceType: true,
+  };
+  const where: Record<string, unknown> = { type: "paid", status: "published" };
+  if (params.resourceId) where.id = { not: params.resourceId };
+  let recommendedProducts = await prisma.resource.findMany({
+    where: params.category ? { ...where, category: params.category } : where,
+    select: selectFields,
+    orderBy: { createdAt: "desc" },
+    take: 3,
+  });
+  if (recommendedProducts.length < 3 && params.category) {
+    const more = await prisma.resource.findMany({
+      where: { ...where, category: { not: params.category }, id: { notIn: recommendedProducts.map(p => p.id) } },
+      select: selectFields,
+      orderBy: { createdAt: "desc" },
+      take: 3 - recommendedProducts.length,
+    });
+    recommendedProducts = [...recommendedProducts, ...more];
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 sm:py-16">

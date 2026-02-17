@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecteur — Big Five Digital</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { overflow: hidden; }
+
+    /* ─── Reader Layout ──────────────────────────────────── */
+    .reader-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #111;
+    }
+
+    .reader-header {
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(20px);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      z-index: 50;
+      -webkit-app-region: drag;
+    }
+    .reader-header * { -webkit-app-region: no-drag; }
+
+    .reader-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .reader-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      max-width: 400px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .reader-header-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .reader-header .btn-icon {
+      width: 32px;
+      height: 32px;
+      font-size: 14px;
+    }
+
+    .mode-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(128,54,141,0.4);
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn:hover { background: rgba(128,54,141,0.7); }
+    .mode-btn.active { background: var(--accent); }
+
+    /* ─── Pages Area ─────────────────────────────────────── */
+    .reader-viewport {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      background: #0d0d0d;
+    }
+
+    .pages-container {
+      display: flex;
+      gap: 4px;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .page-canvas {
+      max-height: calc(100vh - 100px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      background: white;
+    }
+
+    /* Classic (scroll) mode */
+    .reader-viewport.classic-mode {
+      overflow-y: auto;
+      align-items: flex-start;
+    }
+    .reader-viewport.classic-mode .pages-container {
+      flex-direction: column;
+      gap: 8px;
+      padding: 20px;
+      align-items: center;
+    }
+
+    /* ─── Navigation Arrows ──────────────────────────────── */
+    .nav-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      z-index: 20;
+    }
+    .nav-arrow:hover { background: rgba(0,0,0,0.7); border-color: rgba(255,255,255,0.25); }
+    .nav-arrow:disabled { opacity: 0.2; cursor: not-allowed; }
+    .nav-arrow.left { left: 16px; }
+    .nav-arrow.right { right: 16px; }
+
+    /* ─── Click zones (invisible) ────────────────────────── */
+    .click-zone {
+      position: absolute;
+      top: 0;
+      bottom: 60px;
+      width: 30%;
+      z-index: 15;
+      cursor: pointer;
+    }
+    .click-zone.left { left: 0; }
+    .click-zone.right { right: 0; }
+
+    /* ─── Footer / Progress ──────────────────────────────── */
+    .reader-bottom {
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(10px);
+      padding: 6px 20px 8px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 3px;
+      background: var(--bg-tertiary);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 4px;
+      cursor: pointer;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-blue));
+      transition: width 0.3s;
+    }
+
+    .reader-status {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ─── Watermark ──────────────────────────────────────── */
+    .watermark-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 30;
+      overflow: hidden;
+    }
+
+    .watermark-text {
+      position: absolute;
+      white-space: nowrap;
+      font-size: 14px;
+      color: rgba(128, 54, 141, 0.06);
+      transform: rotate(-35deg);
+      font-weight: 600;
+      user-select: none;
+    }
+
+    /* ─── Page Flip Animation ────────────────────────────── */
+    @keyframes flipRight {
+      0% { transform: perspective(1200px) rotateY(0deg); }
+      100% { transform: perspective(1200px) rotateY(-180deg); }
+    }
+
+    @keyframes flipLeft {
+      0% { transform: perspective(1200px) rotateY(-180deg); }
+      100% { transform: perspective(1200px) rotateY(0deg); }
+    }
+
+    .flipping-right {
+      animation: flipRight 0.5s ease-in-out;
+      transform-origin: left center;
+    }
+
+    .flipping-left {
+      animation: flipLeft 0.5s ease-in-out;
+      transform-origin: right center;
+    }
+
+    /* ─── Download Banner ────────────────────────────────── */
+    .download-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(128,54,141,0.2), rgba(41,53,139,0.2));
+      border: 1px solid rgba(128,54,141,0.3);
+      padding: 8px 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      align-items: center;
+      justify-content: space-between;
+    }
+    .download-banner.visible { display: flex; }
+    .download-banner button {
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-size: 11px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="reader-wrapper">
+    <!-- Header -->
+    <div class="reader-header">
+      <div class="reader-header-left">
+        <button class="btn-icon" id="back-btn" title="Retour à la bibliothèque">←</button>
+        <span class="reader-title" id="book-title">Chargement...</span>
+      </div>
+      <div class="reader-header-right">
+        <button class="mode-btn" id="mode-toggle" title="Mode de lecture">📖 Livre</button>
+        <button class="btn-icon" id="zoom-out" title="Zoom -">−</button>
+        <span id="zoom-level" style="font-size:11px;color:var(--text-muted);min-width:36px;text-align:center;">100%</span>
+        <button class="btn-icon" id="zoom-in" title="Zoom +">+</button>
+        <button class="btn-icon" id="fullscreen-btn" title="Plein écran">⛶</button>
+      </div>
+    </div>
+
+    <!-- Download prompt -->
+    <div class="download-banner" id="download-banner">
+      <span>💡 Téléchargez ce livre pour le lire hors-ligne</span>
+      <button id="banner-download">⬇️ Télécharger</button>
+    </div>
+
+    <!-- Viewport -->
+    <div class="reader-viewport" id="viewport">
+      <!-- Click zones for navigation -->
+      <div class="click-zone left" id="click-prev"></div>
+      <div class="click-zone right" id="click-next"></div>
+
+      <!-- Navigation arrows -->
+      <button class="nav-arrow left" id="prev-btn" disabled>‹</button>
+      <button class="nav-arrow right" id="next-btn" disabled>›</button>
+
+      <!-- Pages -->
+      <div class="pages-container" id="pages-container"></div>
+
+      <!-- Watermark -->
+      <div class="watermark-overlay" id="watermark"></div>
+
+      <!-- Loading -->
+      <div id="reader-loading" class="loading-screen" style="position:absolute;inset:0;background:rgba(0,0,0,0.8);">
+        <div class="spinner"></div>
+        <p style="color:var(--text-muted)">Chargement du livre...</p>
+        <p id="load-progress" style="color:var(--text-muted);font-size:12px;"></p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="reader-bottom">
+      <div class="progress-track" id="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="reader-status">
+        <span id="page-info">— / —</span>
+        <span id="spread-info"></span>
+        <span id="percent-info">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- pdf.js from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <script type="module">
+    // ─── pdf.js Setup ───────────────────────────────────────
+    const pdfjsLib = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
+
+    // ─── State ──────────────────────────────────────────────
+    let pdfDoc = null;
+    let totalPages = 0;
+    let currentPage = 1;         // 1-based, single page
+    let currentSpread = 0;       // 0-based, spread index
+    let scale = 1.0;
+    let readingMode = "book";    // "book" or "classic"
+    let pageImages = new Map();  // pageNum -> dataURL
+    let bookId = null;
+    let bookTitle = "";
+    let accessToken = null;
+    let appConfig = null;
+    let isFlipping = false;
+    let userEmail = "";
+    let isDownloaded = false;
+    let supabaseClient = null;
+
+    // ─── DOM Elements ───────────────────────────────────────
+    const $viewport = document.getElementById("viewport");
+    const $container = document.getElementById("pages-container");
+    const $loading = document.getElementById("reader-loading");
+    const $loadProgress = document.getElementById("load-progress");
+    const $prevBtn = document.getElementById("prev-btn");
+    const $nextBtn = document.getElementById("next-btn");
+    const $pageInfo = document.getElementById("page-info");
+    const $spreadInfo = document.getElementById("spread-info");
+    const $percentInfo = document.getElementById("percent-info");
+    const $progressFill = document.getElementById("progress-fill");
+    const $progressTrack = document.getElementById("progress-track");
+    const $zoomLevel = document.getElementById("zoom-level");
+    const $modeToggle = document.getElementById("mode-toggle");
+    const $bookTitle = document.getElementById("book-title");
+    const $downloadBanner = document.getElementById("download-banner");
+
+    // ─── Init ───────────────────────────────────────────────
+    async function init() {
+      appConfig = await window.electronAPI.getConfig();
+      supabaseClient = window.supabase.createClient(appConfig.supabaseUrl, appConfig.supabaseKey);
+
+      // Restore reading mode
+      try {
+        const saved = localStorage.getItem("electron-reading-mode");
+        if (saved === "book" || saved === "classic") readingMode = saved;
+      } catch {}
+
+      updateModeButton();
+
+      // Get auth
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session?.access_token) {
+        window.electronAPI.navigate("login.html");
+        return;
+      }
+      accessToken = session.access_token;
+      userEmail = session.user?.email || "";
+
+      // Receive book info from main process
+      window.electronAPI.onOpenBook(async (data) => {
+        bookId = data.bookId;
+        bookTitle = data.title;
+        $bookTitle.textContent = bookTitle || "Lecteur";
+        await loadPDF();
+      });
+    }
+
+    // ─── Load PDF ───────────────────────────────────────────
+    async function loadPDF() {
+      $loading.style.display = "flex";
+      pageImages.clear();
+
+      try {
+        // Try local first
+        const local = await window.electronAPI.readLocalPdf(bookId);
+        if (local.success && local.data) {
+          isDownloaded = true;
+          $loadProgress.textContent = "Lecture depuis le stockage local...";
+          pdfDoc = await pdfjsLib.getDocument({ data: local.data }).promise;
+        } else {
+          // Stream from API
+          isDownloaded = false;
+          $loadProgress.textContent = "Téléchargement depuis le serveur...";
+          const url = `${appConfig.apiUrl}/api/pdf/${bookId}`;
+          pdfDoc = await pdfjsLib.getDocument({
+            url,
+            httpHeaders: { Authorization: `Bearer ${accessToken}` },
+          }).promise;
+        }
+
+        totalPages = pdfDoc.numPages;
+        currentPage = 1;
+        currentSpread = 0;
+
+        // Show download banner if not downloaded
+        if (!isDownloaded) {
+          $downloadBanner.classList.add("visible");
+        }
+
+        // Pre-render all pages
+        $loadProgress.textContent = "Rendu des pages...";
+        await renderAllPages();
+
+        // Generate watermark
+        generateWatermark();
+
+        // Display
+        $loading.style.display = "none";
+        displayCurrentView();
+        updateUI();
+
+      } catch (err) {
+        console.error("PDF load error:", err);
+        $loadProgress.textContent = "Erreur de chargement";
+        showToast("❌ Impossible de charger le PDF", "error");
+      }
+    }
+
+    // ─── Render all pages to images ─────────────────────────
+    async function renderAllPages() {
+      const renderScale = 2; // High resolution
+      for (let i = 1; i <= totalPages; i++) {
+        $loadProgress.textContent = `Rendu page ${i} / ${totalPages}`;
+        const page = await pdfDoc.getPage(i);
+        const vp = page.getViewport({ scale: renderScale });
+        const canvas = document.createElement("canvas");
+        canvas.width = vp.width;
+        canvas.height = vp.height;
+        const ctx = canvas.getContext("2d");
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        pageImages.set(i, canvas.toDataURL("image/jpeg", 0.92));
+      }
+    }
+
+    // ─── Display current view ───────────────────────────────
+    function displayCurrentView() {
+      $container.innerHTML = "";
+
+      if (readingMode === "classic") {
+        displayClassicMode();
+      } else {
+        displayBookMode();
+      }
+    }
+
+    // ─── Book mode: show spread (2 pages side by side) ──────
+    function displayBookMode() {
+      $viewport.classList.remove("classic-mode");
+      
+      const leftPageNum = currentSpread * 2 + 1;
+      const rightPageNum = leftPageNum + 1;
+
+      // Left page
+      if (leftPageNum <= totalPages) {
+        const img = createPageImage(leftPageNum);
+        img.style.borderRadius = "2px 0 0 2px";
+        $container.appendChild(img);
+      }
+
+      // Right page
+      if (rightPageNum <= totalPages) {
+        const img = createPageImage(rightPageNum);
+        img.style.borderRadius = "0 2px 2px 0";
+        $container.appendChild(img);
+      }
+
+      $container.style.transform = `scale(${scale})`;
+    }
+
+    // ─── Classic mode: show single page ─────────────────────
+    function displayClassicMode() {
+      $viewport.classList.add("classic-mode");
+
+      const img = createPageImage(currentPage);
+      $container.appendChild(img);
+      $container.style.transform = `scale(${scale})`;
+    }
+
+    // ─── Create page image element ──────────────────────────
+    function createPageImage(pageNum) {
+      const img = document.createElement("img");
+      img.src = pageImages.get(pageNum) || "";
+      img.className = "page-canvas";
+      img.draggable = false;
+      img.style.maxWidth = readingMode === "book" ? "48vw" : "80vw";
+      img.alt = `Page ${pageNum}`;
+      return img;
+    }
+
+    // ─── Navigation ─────────────────────────────────────────
+    function goNext() {
+      if (isFlipping) return;
+
+      if (readingMode === "book") {
+        const maxSpread = Math.ceil(totalPages / 2) - 1;
+        if (currentSpread >= maxSpread) return;
+        animateFlip("right", () => {
+          currentSpread++;
+          currentPage = currentSpread * 2 + 1;
+          displayCurrentView();
+          updateUI();
+        });
+      } else {
+        if (currentPage >= totalPages) return;
+        currentPage++;
+        currentSpread = Math.floor((currentPage - 1) / 2);
+        displayCurrentView();
+        updateUI();
+      }
+    }
+
+    function goPrev() {
+      if (isFlipping) return;
+
+      if (readingMode === "book") {
+        if (currentSpread <= 0) return;
+        animateFlip("left", () => {
+          currentSpread--;
+          currentPage = currentSpread * 2 + 1;
+          displayCurrentView();
+          updateUI();
+        });
+      } else {
+        if (currentPage <= 1) return;
+        currentPage--;
+        currentSpread = Math.floor((currentPage - 1) / 2);
+        displayCurrentView();
+        updateUI();
+      }
+    }
+
+    function goToPage(pageNum) {
+      pageNum = Math.max(1, Math.min(totalPages, pageNum));
+      currentPage = pageNum;
+      currentSpread = Math.floor((pageNum - 1) / 2);
+      displayCurrentView();
+      updateUI();
+    }
+
+    // ─── Flip animation ─────────────────────────────────────
+    function animateFlip(direction, callback) {
+      isFlipping = true;
+      const pages = $container.querySelectorAll(".page-canvas");
+      const target = direction === "right" ? pages[pages.length - 1] : pages[0];
+      
+      if (target) {
+        target.classList.add(direction === "right" ? "flipping-right" : "flipping-left");
+        setTimeout(() => {
+          target.classList.remove("flipping-right", "flipping-left");
+          isFlipping = false;
+          callback();
+        }, 400);
+      } else {
+        isFlipping = false;
+        callback();
+      }
+    }
+
+    // ─── Update UI ──────────────────────────────────────────
+    function updateUI() {
+      // Navigation buttons
+      if (readingMode === "book") {
+        $prevBtn.disabled = currentSpread <= 0;
+        $nextBtn.disabled = currentSpread >= Math.ceil(totalPages / 2) - 1;
+        
+        const leftPage = currentSpread * 2 + 1;
+        const rightPage = Math.min(leftPage + 1, totalPages);
+        $pageInfo.textContent = leftPage === rightPage
+          ? `Page ${leftPage} / ${totalPages}`
+          : `Pages ${leftPage}-${rightPage} / ${totalPages}`;
+        $spreadInfo.textContent = `Planche ${currentSpread + 1} / ${Math.ceil(totalPages / 2)}`;
+      } else {
+        $prevBtn.disabled = currentPage <= 1;
+        $nextBtn.disabled = currentPage >= totalPages;
+        $pageInfo.textContent = `Page ${currentPage} / ${totalPages}`;
+        $spreadInfo.textContent = "";
+      }
+
+      // Progress
+      const progress = readingMode === "book"
+        ? ((currentSpread + 1) / Math.ceil(totalPages / 2)) * 100
+        : (currentPage / totalPages) * 100;
+      $progressFill.style.width = progress + "%";
+      $percentInfo.textContent = Math.round(progress) + "%";
+
+      // Zoom
+      $zoomLevel.textContent = Math.round(scale * 100) + "%";
+
+      // Hide arrows in classic mode
+      $prevBtn.style.display = readingMode === "classic" ? "none" : "";
+      $nextBtn.style.display = readingMode === "classic" ? "none" : "";
+      document.getElementById("click-prev").style.display = readingMode === "classic" ? "none" : "";
+      document.getElementById("click-next").style.display = readingMode === "classic" ? "none" : "";
+    }
+
+    // ─── Watermark ──────────────────────────────────────────
+    function generateWatermark() {
+      const overlay = document.getElementById("watermark");
+      overlay.innerHTML = "";
+      if (!userEmail) return;
+
+      for (let y = 0; y < 8; y++) {
+        for (let x = 0; x < 5; x++) {
+          const span = document.createElement("span");
+          span.className = "watermark-text";
+          span.textContent = userEmail;
+          span.style.left = (x * 25 + (y % 2) * 12) + "%";
+          span.style.top = (y * 14 + 2) + "%";
+          overlay.appendChild(span);
+        }
+      }
+    }
+
+    // ─── Mode toggle ────────────────────────────────────────
+    function toggleMode() {
+      if (readingMode === "book") {
+        readingMode = "classic";
+        currentPage = currentSpread * 2 + 1;
+      } else {
+        readingMode = "book";
+        currentSpread = Math.floor((currentPage - 1) / 2);
+      }
+      localStorage.setItem("electron-reading-mode", readingMode);
+      updateModeButton();
+      displayCurrentView();
+      updateUI();
+    }
+
+    function updateModeButton() {
+      $modeToggle.textContent = readingMode === "book" ? "📖 Livre" : "📄 Classique";
+      $modeToggle.classList.toggle("active", readingMode === "book");
+    }
+
+    // ─── Zoom ───────────────────────────────────────────────
+    function zoomIn() {
+      scale = Math.min(3, scale + 0.15);
+      $container.style.transform = `scale(${scale})`;
+      $zoomLevel.textContent = Math.round(scale * 100) + "%";
+    }
+
+    function zoomOut() {
+      scale = Math.max(0.3, scale - 0.15);
+      $container.style.transform = `scale(${scale})`;
+      $zoomLevel.textContent = Math.round(scale * 100) + "%";
+    }
+
+    // ─── Fullscreen ─────────────────────────────────────────
+    function toggleFullscreen() {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        document.documentElement.requestFullscreen();
+      }
+    }
+
+    // ─── Download ───────────────────────────────────────────
+    async function downloadForOffline() {
+      if (!bookId || !accessToken) return;
+      showToast("⬇️ Téléchargement en cours...", "");
+      const result = await window.electronAPI.downloadPdf(bookId, accessToken);
+      if (result.success) {
+        isDownloaded = true;
+        $downloadBanner.classList.remove("visible");
+        const sizeMB = (result.size / (1024 * 1024)).toFixed(1);
+        showToast(`✅ Téléchargé ! (${sizeMB} Mo)`, "success");
+      } else {
+        showToast(`❌ Échec : ${result.error}`, "error");
+      }
+    }
+
+    // ─── Toast ──────────────────────────────────────────────
+    function showToast(msg, type) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.className = `toast visible ${type || ""}`;
+      setTimeout(() => toast.classList.remove("visible"), 3000);
+    }
+
+    // ─── Progress bar click ─────────────────────────────────
+    $progressTrack.addEventListener("click", (e) => {
+      const rect = $progressTrack.getBoundingClientRect();
+      const ratio = (e.clientX - rect.left) / rect.width;
+      const targetPage = Math.max(1, Math.ceil(ratio * totalPages));
+      goToPage(targetPage);
+    });
+
+    // ─── Event Listeners ────────────────────────────────────
+    document.getElementById("back-btn").addEventListener("click", () => {
+      window.electronAPI.navigate("library.html");
+    });
+
+    $prevBtn.addEventListener("click", goPrev);
+    $nextBtn.addEventListener("click", goNext);
+    document.getElementById("click-prev").addEventListener("click", goPrev);
+    document.getElementById("click-next").addEventListener("click", goNext);
+
+    document.getElementById("zoom-in").addEventListener("click", zoomIn);
+    document.getElementById("zoom-out").addEventListener("click", zoomOut);
+    document.getElementById("fullscreen-btn").addEventListener("click", toggleFullscreen);
+    $modeToggle.addEventListener("click", toggleMode);
+    document.getElementById("banner-download").addEventListener("click", downloadForOffline);
+
+    // Keyboard
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); goNext(); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
+      if (e.key === "Home") { goToPage(1); }
+      if (e.key === "End") { goToPage(totalPages); }
+      if (e.key === "+" || e.key === "=") { e.preventDefault(); zoomIn(); }
+      if (e.key === "-") { e.preventDefault(); zoomOut(); }
+      if (e.key === "f" || e.key === "F") { toggleFullscreen(); }
+      if (e.key === "Escape") {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else window.electronAPI.navigate("library.html");
+      }
+    });
+
+    // Mouse wheel zoom
+    $viewport.addEventListener("wheel", (e) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        if (e.deltaY < 0) zoomIn();
+        else zoomOut();
+      } else if (readingMode === "book") {
+        // Scroll to navigate in book mode
+        if (e.deltaY > 30) goNext();
+        else if (e.deltaY < -30) goPrev();
+      }
+    }, { passive: false });
+
+    // ─── Start ──────────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>

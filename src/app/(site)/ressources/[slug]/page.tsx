@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import DirectDownloadButton from "@/components/resources/DirectDownloadButton";
 import ProductRecommendations from "@/components/upsell/ProductRecommendations";
-import { getRecommendedProducts } from "@/lib/recommendations";
 import { FileText, Clock, BarChart3, Calendar, CheckCircle } from "lucide-react";
 
 interface PageProps {
@@ -19,12 +18,27 @@ export default async function FreeResourcePage({ params }: PageProps) {
 
   if (!resource) notFound();
 
-  // Fetch recommended paid products
-  const recommendedProducts = await getRecommendedProducts(
-    resource.category,
-    resource.id,
-    2
-  );
+  // Fetch recommended paid products (inline query to avoid client/server boundary issues)
+  const selectFields = {
+    id: true, slug: true, title: true, shortDescription: true,
+    coverImage: true, price: true, originalPrice: true, currency: true,
+    category: true, level: true, resourceType: true,
+  };
+  let recommendedProducts = await prisma.resource.findMany({
+    where: { type: "paid", status: "published", category: resource.category, id: { not: resource.id } },
+    select: selectFields,
+    orderBy: { createdAt: "desc" },
+    take: 2,
+  });
+  if (recommendedProducts.length < 2) {
+    const more = await prisma.resource.findMany({
+      where: { type: "paid", status: "published", category: { not: resource.category }, id: { notIn: [resource.id, ...recommendedProducts.map(p => p.id)] } },
+      select: selectFields,
+      orderBy: { createdAt: "desc" },
+      take: 2 - recommendedProducts.length,
+    });
+    recommendedProducts = [...recommendedProducts, ...more];
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

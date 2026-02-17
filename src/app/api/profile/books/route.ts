@@ -1,15 +1,15 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { authFromRequest } from "@/lib/auth-bearer";
 import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/profile/books
  * 
  * Retourne les livres achetés par l'utilisateur connecté.
- * Utilisé par la page bibliothèque iBooks.
+ * Supporte cookies (web) et Bearer token (Electron).
  */
-export async function GET() {
-  const session = await auth();
+export async function GET(req: NextRequest) {
+  const session = await authFromRequest(req);
   if (!session?.user) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }

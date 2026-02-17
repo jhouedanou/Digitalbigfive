@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ma Bibliothèque — Big Five Digital</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>📚 Ma Bibliothèque</h1>
+      <span id="book-count" class="header-subtitle"></span>
+    </div>
+    <div class="header-right">
+      <div class="search-bar" style="margin:0; width: 260px;">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search" class="search-input" placeholder="Rechercher un livre...">
+      </div>
+      <button id="storage-btn" class="btn-icon" title="Stockage local">💾</button>
+      <button id="refresh-btn" class="btn-icon" title="Rafraîchir">🔄</button>
+      <button id="logout-btn" class="btn-icon" title="Déconnexion">🚪</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="library-container">
+    <div class="library-stats" id="stats">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(128,54,141,0.2)">📖</div>
+        <div>
+          <div class="stat-value" id="stat-books">-</div>
+          <div class="stat-label">Livres achetés</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(48,209,88,0.2)">⬇️</div>
+        <div>
+          <div class="stat-value" id="stat-downloaded">-</div>
+          <div class="stat-label">Téléchargés</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(255,159,10,0.2)">💿</div>
+        <div>
+          <div class="stat-value" id="stat-storage">-</div>
+          <div class="stat-label">Espace utilisé</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Books -->
+    <div id="books-container"></div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state" style="display:none;">
+      <div class="empty-state-icon">📚</div>
+      <h3>Aucun livre trouvé</h3>
+      <p>Vos livres achetés apparaîtront ici</p>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading-screen" style="min-height:40vh;">
+      <div class="spinner"></div>
+      <p style="color:var(--text-muted)">Chargement de votre bibliothèque...</p>
+    </div>
+  </div>
+
+  <!-- Context menu for books -->
+  <div id="context-menu" class="context-menu">
+    <button class="context-item" id="ctx-read">📖 Lire</button>
+    <button class="context-item" id="ctx-download">⬇️ Télécharger pour hors-ligne</button>
+    <div class="context-separator"></div>
+    <button class="context-item" id="ctx-delete" style="color:var(--danger)">🗑️ Supprimer le téléchargement</button>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    let supabaseClient = null;
+    let accessToken = null;
+    let allBooks = [];
+    let downloadedMap = {};
+    let appConfig = null;
+    let contextBookId = null;
+
+    // ─── Init ───────────────────────────────────────────────
+    async function init() {
+      appConfig = await window.electronAPI.getConfig();
+      supabaseClient = window.supabase.createClient(appConfig.supabaseUrl, appConfig.supabaseKey);
+
+      // Check auth
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session?.access_token) {
+        window.electronAPI.navigate("login.html");
+        return;
+      }
+      accessToken = session.access_token;
+
+      await loadBooks();
+      await updateDownloadStatus();
+      updateStats();
+    }
+
+    // ─── Load books from API ────────────────────────────────
+    async function loadBooks() {
+      try {
+        const res = await fetch(`${appConfig.apiUrl}/api/profile/books`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (res.status === 401) {
+          window.electronAPI.navigate("login.html");
+          return;
+        }
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        allBooks = data.books || [];
+        renderBooks(allBooks);
+      } catch (err) {
+        console.error("Failed to load books:", err);
+        showToast("Impossible de charger les livres. Vérifiez votre connexion.", "error");
+        // Show locally downloaded books even offline
+        await showOfflineBooks();
+      } finally {
+        document.getElementById("loading").style.display = "none";
+      }
+    }
+
+    // ─── Show books available offline ───────────────────────
+    async function showOfflineBooks() {
+      const downloaded = await window.electronAPI.listDownloadedPdfs();
+      if (downloaded.length > 0) {
+        // Create placeholder books from downloaded IDs
+        allBooks = downloaded.map(d => ({
+          id: d.bookId,
+          title: `Livre (hors-ligne)`,
+          coverImage: null,
+          category: "Téléchargé",
+          pageCount: null,
+        }));
+        renderBooks(allBooks);
+      }
+    }
+
+    // ─── Update download status ─────────────────────────────
+    async function updateDownloadStatus() {
+      const downloaded = await window.electronAPI.listDownloadedPdfs();
+      downloadedMap = {};
+      downloaded.forEach(d => { downloadedMap[d.bookId] = d; });
+      
+      // Update badges
+      document.querySelectorAll(".book-card").forEach(card => {
+        const bookId = card.dataset.bookId;
+        const badge = card.querySelector(".download-badge");
+        if (downloadedMap[bookId]) {
+          if (!badge) {
+            const b = document.createElement("div");
+            b.className = "download-badge";
+            b.textContent = "✓";
+            b.title = "Disponible hors-ligne";
+            card.querySelector(".book-cover-wrapper").appendChild(b);
+          }
+        } else if (badge) {
+          badge.remove();
+        }
+      });
+    }
+
+    // ─── Render books ───────────────────────────────────────
+    function renderBooks(books) {
+      const container = document.getElementById("books-container");
+      const empty = document.getElementById("empty-state");
+
+      if (books.length === 0) {
+        container.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+
+      // Group by category
+      const groups = {};
+      books.forEach(book => {
+        const cat = book.category || "Autre";
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(book);
+      });
+
+      let html = "";
+      Object.entries(groups).forEach(([category, books], idx) => {
+        html += `
+          <div class="category-section fade-in" style="animation-delay: ${idx * 0.1}s">
+            <div class="category-title">${category}</div>
+            <div class="shelf">
+              <div class="books-row">
+                ${books.map(book => renderBookCard(book)).join("")}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      // Add click handlers
+      container.querySelectorAll(".book-card").forEach(card => {
+        card.addEventListener("click", () => openBook(card.dataset.bookId, card.dataset.bookTitle));
+        card.addEventListener("contextmenu", (e) => showContextMenu(e, card.dataset.bookId));
+      });
+    }
+
+    function renderBookCard(book) {
+      const isDownloaded = downloadedMap[book.id];
+      const coverHtml = book.coverImage
+        ? `<img class="book-cover" src="${book.coverImage}" alt="${book.title}" onerror="this.parentElement.innerHTML='<div class=\\'book-no-cover\\'>${book.title}</div>'">`
+        : `<div class="book-no-cover">${book.title}</div>`;
+
+      return `
+        <div class="book-card" data-book-id="${book.id}" data-book-title="${book.title}">
+          <div class="book-cover-wrapper">
+            <div class="book-spine"></div>
+            ${coverHtml}
+            ${isDownloaded ? '<div class="download-badge" title="Disponible hors-ligne">✓</div>' : ''}
+          </div>
+          <div class="book-title">${book.title}</div>
+          <div class="book-meta">${book.pageCount ? book.pageCount + ' pages' : ''}</div>
+        </div>
+      `;
+    }
+
+    // ─── Open book ──────────────────────────────────────────
+    function openBook(bookId, title) {
+      window.electronAPI.navigateReader(bookId, title);
+    }
+
+    // ─── Download PDF locally ───────────────────────────────
+    async function downloadBook(bookId) {
+      if (!accessToken) return;
+
+      showToast("⬇️ Téléchargement en cours...", "");
+      
+      const result = await window.electronAPI.downloadPdf(bookId, accessToken);
+      
+      if (result.success) {
+        const sizeMB = (result.size / (1024 * 1024)).toFixed(1);
+        showToast(`✅ Téléchargé ! (${sizeMB} Mo)`, "success");
+        await updateDownloadStatus();
+        updateStats();
+      } else {
+        showToast(`❌ Échec : ${result.error}`, "error");
+      }
+    }
+
+    // ─── Delete local PDF ───────────────────────────────────
+    async function deleteLocalBook(bookId) {
+      const result = await window.electronAPI.deletePdf(bookId);
+      if (result.success) {
+        showToast("🗑️ Téléchargement supprimé", "success");
+        delete downloadedMap[bookId];
+        await updateDownloadStatus();
+        updateStats();
+      }
+    }
+
+    // ─── Context menu ───────────────────────────────────────
+    function showContextMenu(e, bookId) {
+      e.preventDefault();
+      contextBookId = bookId;
+      const menu = document.getElementById("context-menu");
+      const deleteBtn = document.getElementById("ctx-delete");
+      const downloadBtn = document.getElementById("ctx-download");
+      
+      if (downloadedMap[bookId]) {
+        deleteBtn.style.display = "flex";
+        downloadBtn.textContent = "🔄 Re-télécharger";
+      } else {
+        deleteBtn.style.display = "none";
+        downloadBtn.textContent = "⬇️ Télécharger pour hors-ligne";
+      }
+
+      menu.style.left = e.clientX + "px";
+      menu.style.top = e.clientY + "px";
+      menu.classList.add("visible");
+    }
+
+    // ─── Stats ──────────────────────────────────────────────
+    async function updateStats() {
+      document.getElementById("stat-books").textContent = allBooks.length;
+
+      const downloaded = await window.electronAPI.listDownloadedPdfs();
+      document.getElementById("stat-downloaded").textContent = downloaded.length;
+
+      const storage = await window.electronAPI.getStorageInfo();
+      document.getElementById("stat-storage").textContent = storage.totalSizeMB
+        ? storage.totalSizeMB + " Mo"
+        : "0 Mo";
+
+      document.getElementById("book-count").textContent = 
+        `${allBooks.length} livre${allBooks.length > 1 ? 's' : ''}`;
+    }
+
+    // ─── Toast ──────────────────────────────────────────────
+    function showToast(msg, type) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.className = `toast visible ${type || ""}`;
+      setTimeout(() => toast.classList.remove("visible"), 3000);
+    }
+
+    // ─── Event Listeners ────────────────────────────────────
+    document.getElementById("search").addEventListener("input", (e) => {
+      const q = e.target.value.toLowerCase();
+      const filtered = q
+        ? allBooks.filter(b => b.title.toLowerCase().includes(q) || (b.category || "").toLowerCase().includes(q))
+        : allBooks;
+      renderBooks(filtered);
+    });
+
+    document.getElementById("refresh-btn").addEventListener("click", async () => {
+      document.getElementById("loading").style.display = "flex";
+      await loadBooks();
+      await updateDownloadStatus();
+      updateStats();
+    });
+
+    document.getElementById("storage-btn").addEventListener("click", () => {
+      window.electronAPI.openStorageFolder();
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+      if (supabaseClient) {
+        await supabaseClient.auth.signOut();
+      }
+      window.electronAPI.navigate("login.html");
+    });
+
+    // Context menu actions
+    document.getElementById("ctx-read").addEventListener("click", () => {
+      document.getElementById("context-menu").classList.remove("visible");
+      if (contextBookId) {
+        const book = allBooks.find(b => b.id === contextBookId);
+        openBook(contextBookId, book?.title || "");
+      }
+    });
+
+    document.getElementById("ctx-download").addEventListener("click", () => {
+      document.getElementById("context-menu").classList.remove("visible");
+      if (contextBookId) downloadBook(contextBookId);
+    });
+
+    document.getElementById("ctx-delete").addEventListener("click", () => {
+      document.getElementById("context-menu").classList.remove("visible");
+      if (contextBookId) deleteLocalBook(contextBookId);
+    });
+
+    // Close context menu on click elsewhere
+    document.addEventListener("click", () => {
+      document.getElementById("context-menu").classList.remove("visible");
+    });
+
+    // ─── Start ──────────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>

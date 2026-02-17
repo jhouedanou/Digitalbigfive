@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { authFromRequest } from "@/lib/auth-bearer";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@supabase/supabase-js";
 import { checkAccess } from "@/lib/pdf-security";
@@ -14,17 +14,15 @@ const supabaseAdmin = createClient(
  * GET /api/pdf/[id]
  * 
  * Endpoint simplifié de streaming PDF.
- * - Vérifie l'auth Supabase (cookies)
- * - Vérifie les droits d'accès (achat ou admin)
- * - Stream le fichier avec headers de sécurité
+ * Supporte cookies (web) et Bearer token (Electron).
  */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // ─── Authentification via cookies Supabase ────────────────
-    const session = await auth();
+    // ─── Authentification via cookies OU Bearer token ────
+    const session = await authFromRequest(req);
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Authentification requise" },

@@ -1,42 +1,37 @@
 import { contextBridge, ipcRenderer } from "electron";
 
+// ─── Expose APIs to renderer ────────────────────────────────
 contextBridge.exposeInMainWorld("electronAPI", {
-  // App info
-  getVersion: () => ipcRenderer.invoke("app:get-version"),
-  getPlatform: () => ipcRenderer.invoke("app:get-platform"),
+  // Config
+  getConfig: () => ipcRenderer.invoke("get-config"),
 
   // Navigation
-  navigate: (path: string) => ipcRenderer.send("navigate", path),
+  navigate: (page: string) => ipcRenderer.send("navigate", page),
+  navigateReader: (bookId: string, title: string) =>
+    ipcRenderer.send("navigate-reader", bookId, title),
 
-  // Online/offline status
-  onOnlineStatus: (callback: (online: boolean) => void) => {
-    const handler = (_event: Electron.IpcRendererEvent, online: boolean) =>
-      callback(online);
-    ipcRenderer.on("online-status", handler);
-    return () => ipcRenderer.removeListener("online-status", handler);
-  },
+  // PDF Storage
+  downloadPdf: (bookId: string, accessToken: string) =>
+    ipcRenderer.invoke("download-pdf", bookId, accessToken),
+  readLocalPdf: (bookId: string) =>
+    ipcRenderer.invoke("read-local-pdf", bookId),
+  isPdfDownloaded: (bookId: string) =>
+    ipcRenderer.invoke("is-pdf-downloaded", bookId),
+  deletePdf: (bookId: string) =>
+    ipcRenderer.invoke("delete-pdf", bookId),
+  listDownloadedPdfs: () =>
+    ipcRenderer.invoke("list-downloaded-pdfs"),
+  getStorageInfo: () =>
+    ipcRenderer.invoke("get-storage-info"),
+  openStorageFolder: () =>
+    ipcRenderer.send("open-storage-folder"),
 
-  // Auto-update
-  onUpdateAvailable: (callback: (info: { version: string }) => void) => {
-    const handler = (
-      _event: Electron.IpcRendererEvent,
-      info: { version: string }
-    ) => callback(info);
-    ipcRenderer.on("update-available", handler);
-    return () => ipcRenderer.removeListener("update-available", handler);
-  },
-  onUpdateDownloaded: (callback: (info: { version: string }) => void) => {
-    const handler = (
-      _event: Electron.IpcRendererEvent,
-      info: { version: string }
-    ) => callback(info);
-    ipcRenderer.on("update-downloaded", handler);
-    return () => ipcRenderer.removeListener("update-downloaded", handler);
-  },
+  // Events from main
+  onOpenBook: (callback: (data: { bookId: string; title: string }) => void) =>
+    ipcRenderer.on("open-book", (_event, data) => callback(data)),
+  onAppConfig: (callback: (config: Record<string, string>) => void) =>
+    ipcRenderer.on("app-config", (_event, config) => callback(config)),
+  onUpdateDownloaded: (callback: (info: { version: string }) => void) =>
+    ipcRenderer.on("update-downloaded", (_event, info) => callback(info)),
   installUpdate: () => ipcRenderer.send("install-update"),
-
-  // Window controls
-  minimize: () => ipcRenderer.send("window:minimize"),
-  maximize: () => ipcRenderer.send("window:maximize"),
-  close: () => ipcRenderer.send("window:close"),
 });
