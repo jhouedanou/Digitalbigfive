@@ -1,68 +1,87 @@
 {
-  "name": "Big Five Reader - Lecture PDF Sécurisée",
-  "short_name": "Big Five Reader",
-  "description": "Lisez vos PDFs achetés en mode offline de manière sécurisée",
-  "start_url": "/dashboard/reader",
+  "name": "Big Five Digital - Ma Bibliothèque",
+  "short_name": "Big Five",
+  "description": "Votre bibliothèque de livres numériques. Lisez vos PDFs achetés de manière sécurisée.",
+  "start_url": "/dashboard/bibliotheque",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#1c1c1e",
   "theme_color": "#80368D",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "scope": "/",
+  "id": "/dashboard/bibliotheque",
   "icons": [
     {
       "src": "/icons/icon-72x72.svg",
       "sizes": "72x72",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     },
     {
       "src": "/icons/icon-96x96.svg",
       "sizes": "96x96",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     },
     {
       "src": "/icons/icon-128x128.svg",
       "sizes": "128x128",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     },
     {
       "src": "/icons/icon-144x144.svg",
       "sizes": "144x144",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     },
     {
       "src": "/icons/icon-152x152.svg",
       "sizes": "152x152",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     },
     {
       "src": "/icons/icon-192x192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-384x384.svg",
       "sizes": "384x384",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     },
     {
       "src": "/icons/icon-512x512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ],
-  "categories": [
-    "education",
-    "books"
+  "shortcuts": [
+    {
+      "name": "Ma Bibliothèque",
+      "short_name": "Bibliothèque",
+      "description": "Accéder à vos livres",
+      "url": "/dashboard/bibliotheque",
+      "icons": [{ "src": "/icons/icon-96x96.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mes Produits",
+      "short_name": "Produits",
+      "description": "Voir vos achats",
+      "url": "/dashboard/produits",
+      "icons": [{ "src": "/icons/icon-96x96.svg", "sizes": "96x96" }]
+    }
   ],
+  "categories": ["education", "books", "productivity"],
   "lang": "fr",
   "dir": "ltr",
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "handle_links": "preferred",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"]
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import AuthProvider from "@/components/providers/SessionProvider";
 import { ServiceWorkerProvider } from "@/components/pwa/ServiceWorkerProvider";
+import PageTransitionBar from "@/components/layout/PageTransitionBar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,11 +11,19 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "Big Five Reader",
+    statusBarStyle: "black-translucent",
+    title: "Big Five",
+    startupImage: [
+      { url: "/icons/icon-512x512.svg" },
+    ],
   },
   formatDetection: {
     telephone: false,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "msapplication-TileColor": "#80368D",
+    "msapplication-tap-highlight": "no",
   },
 };
 
@@ -40,7 +49,10 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <AuthProvider>
-          <ServiceWorkerProvider>{children}</ServiceWorkerProvider>
+          <ServiceWorkerProvider>
+            <PageTransitionBar />
+            {children}
+          </ServiceWorkerProvider>
         </AuthProvider>
       </body>
     </html>

@@ -22,7 +22,10 @@
       "Bash(del /f \"node_modules\\\\.prisma\\\\client\\\\query_engine-windows.dll.node\")",
       "Bash(npx tsc:*)",
       "Bash(findstr:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(git log:*)",
+      "Bash(ls:*)",
+      "Bash(^d \")"
     ]
   }
 }
