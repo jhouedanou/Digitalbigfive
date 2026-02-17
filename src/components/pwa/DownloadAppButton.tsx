@@ -11,6 +11,7 @@ import {
   Chrome,
   ExternalLink,
   ChevronDown,
+  AlertTriangle,
 } from "lucide-react";
 
 // ═══════════════════════════════════════════════
@@ -361,6 +362,25 @@ export default function DownloadAppButton({
               {info.description}
             </p>
           </div>
+
+          {/* Avertissement app non signée */}
+          {isDesktop && (
+            <div className="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-200/60 rounded-xl mb-5">
+              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="text-xs text-amber-700">
+                <p className="font-medium mb-1">
+                  Un avertissement de sécurité apparaîtra à l&apos;installation
+                </p>
+                <p className="text-amber-600">
+                  {platform === "windows"
+                    ? "Windows SmartScreen : cliquez « Informations complémentaires » puis « Exécuter quand même »."
+                    : platform === "mac"
+                    ? "macOS : allez dans Réglages Système → Confidentialité et sécurité → « Ouvrir quand même »."
+                    : "L'application n'est pas encore signée. Autorisez-la manuellement après le téléchargement."}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Autres plateformes */}
           {isDesktop && (

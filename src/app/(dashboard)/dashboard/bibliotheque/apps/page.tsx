@@ -15,6 +15,7 @@ import {
   Cloud,
   RefreshCw,
   ChevronRight,
+  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -217,6 +218,55 @@ export default function AppsDownloadPage() {
               <p className="text-sm text-gray-400">{feature.description}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Avertissement installation */}
+      <section className="max-w-4xl mx-auto px-4 mb-10">
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-amber-300 mb-2">
+                Important : Application non sign&eacute;e
+              </h3>
+              <p className="text-sm text-gray-300 mb-3">
+                Notre application n&apos;est pas encore sign&eacute;e avec un certificat de d&eacute;veloppeur.
+                Windows et macOS afficheront un avertissement de s&eacute;curit&eacute; lors de l&apos;installation.
+                <strong className="text-white"> C&apos;est normal et sans danger.</strong> Suivez les guides ci-dessous pour installer l&apos;application.
+              </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Guide Windows */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <WindowsIcon className="w-5 h-5 text-blue-400" />
+                    <h4 className="font-medium text-sm text-blue-400">Windows SmartScreen</h4>
+                  </div>
+                  <ol className="text-xs text-gray-400 space-y-2 list-decimal list-inside">
+                    <li>Lancez le fichier <strong className="text-white">.exe</strong> t&eacute;l&eacute;charg&eacute;</li>
+                    <li>Windows affiche <strong className="text-white">&quot;Windows a prot&eacute;g&eacute; votre ordinateur&quot;</strong></li>
+                    <li>Cliquez sur <strong className="text-white">&quot;Informations compl&eacute;mentaires&quot;</strong></li>
+                    <li>Cliquez sur <strong className="text-white">&quot;Ex&eacute;cuter quand m&ecirc;me&quot;</strong></li>
+                  </ol>
+                </div>
+                {/* Guide macOS */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Apple className="w-5 h-5 text-gray-300" />
+                    <h4 className="font-medium text-sm text-gray-300">macOS Gatekeeper</h4>
+                  </div>
+                  <ol className="text-xs text-gray-400 space-y-2 list-decimal list-inside">
+                    <li>Ouvrez le fichier <strong className="text-white">.dmg</strong> et glissez l&apos;app dans Applications</li>
+                    <li>Au lancement, macOS affiche <strong className="text-white">&quot;impossible de v&eacute;rifier le d&eacute;veloppeur&quot;</strong></li>
+                    <li>Ouvrez <strong className="text-white">Pr&eacute;f&eacute;rences Syst&egrave;me → Confidentialit&eacute; et s&eacute;curit&eacute;</strong></li>
+                    <li>En bas, cliquez sur <strong className="text-white">&quot;Ouvrir quand m&ecirc;me&quot;</strong></li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -470,8 +520,110 @@ export default function AppsDownloadPage() {
               <ChevronRight className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-90" />
             </summary>
             <div className="px-6 pb-6 text-gray-400">
-              Oui, l'application est entièrement gratuite. Elle vous permet simplement 
+              Oui, l'application est entièrement gratuite. Elle vous permet simplement
               d'accéder aux livres que vous avez achetés de manière plus confortable.
+            </div>
+          </details>
+
+          <details className="group bg-amber-500/5 border border-amber-500/20 rounded-xl">
+            <summary className="flex items-center justify-between p-6 cursor-pointer">
+              <span className="font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+                Windows affiche un avertissement de sécurité, que faire ?
+              </span>
+              <ChevronRight className="w-5 h-5 text-amber-400 transition-transform group-open:rotate-90" />
+            </summary>
+            <div className="px-6 pb-6 text-gray-400 space-y-4">
+              <p>
+                C&apos;est normal. Notre application n&apos;est pas encore signée avec un certificat Microsoft,
+                donc Windows SmartScreen la bloque par précaution. L&apos;application est sûre et open source.
+              </p>
+              <div className="bg-white/5 rounded-xl p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-blue-400 font-bold text-xs">1</span>
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">Double-cliquez sur le fichier .exe</p>
+                    <p className="text-xs text-gray-500 mt-0.5">L&apos;écran bleu SmartScreen apparaît</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-blue-400 font-bold text-xs">2</span>
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">Cliquez sur &quot;Informations complémentaires&quot;</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Un lien texte sous le message d&apos;avertissement</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-blue-400 font-bold text-xs">3</span>
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">Cliquez sur &quot;Exécuter quand même&quot;</p>
+                    <p className="text-xs text-gray-500 mt-0.5">L&apos;installation démarre normalement</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details className="group bg-amber-500/5 border border-amber-500/20 rounded-xl">
+            <summary className="flex items-center justify-between p-6 cursor-pointer">
+              <span className="font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+                macOS refuse d&apos;ouvrir l&apos;application, que faire ?
+              </span>
+              <ChevronRight className="w-5 h-5 text-amber-400 transition-transform group-open:rotate-90" />
+            </summary>
+            <div className="px-6 pb-6 text-gray-400 space-y-4">
+              <p>
+                macOS Gatekeeper bloque les applications non signées par mesure de sécurité.
+                Voici comment autoriser l&apos;installation :
+              </p>
+              <div className="bg-white/5 rounded-xl p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-gray-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-gray-300 font-bold text-xs">1</span>
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">Ouvrez le fichier .dmg et glissez l&apos;app dans Applications</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-gray-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-gray-300 font-bold text-xs">2</span>
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">Lancez l&apos;app — un message d&apos;erreur apparaît</p>
+                    <p className="text-xs text-gray-500 mt-0.5">&quot;Big Five Digital ne peut pas être ouvert car le développeur ne peut pas être vérifié&quot;</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-gray-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-gray-300 font-bold text-xs">3</span>
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">Allez dans Réglages Système → Confidentialité et sécurité</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Faites défiler vers le bas de la page</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-gray-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-gray-300 font-bold text-xs">4</span>
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">Cliquez sur &quot;Ouvrir quand même&quot;</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Confirmez avec votre mot de passe ou Touch ID</p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">
+                Astuce : vous pouvez aussi faire un clic droit (ou Ctrl+clic) sur l&apos;app, puis choisir &quot;Ouvrir&quot;
+                pour contourner le blocage directement.
+              </p>
             </div>
           </details>
         </div>
