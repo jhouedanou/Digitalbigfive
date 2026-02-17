@@ -299,14 +299,13 @@
   <!-- Toast -->
   <div id="toast" class="toast"></div>
 
-  <!-- pdf.js from CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- pdf.js & Supabase loaded locally (no CDN dependency) -->
+  <script src="./supabase.min.js"></script>
 
   <script type="module">
-    // ─── pdf.js Setup ───────────────────────────────────────
-    const pdfjsLib = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs");
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
+    // ─── pdf.js Setup (local files) ───────────────────────────
+    const pdfjsLib = await import("./pdf.min.mjs");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "./pdf.worker.min.mjs";
 
     // ─── State ──────────────────────────────────────────────
     let pdfDoc = null;
@@ -343,8 +342,32 @@
     const $downloadBanner = document.getElementById("download-banner");
 
     // ─── Init ───────────────────────────────────────────────
+    // Pending book data in case open-book arrives before init completes
+    let pendingBookData = null;
+
+    // Register onOpenBook listener IMMEDIATELY (before any async work)
+    // to avoid missing the event from main process
+    window.electronAPI.onOpenBook((data) => {
+      console.log("[READER] Received open-book:", data.bookId, data.title);
+      if (!appConfig) {
+        // init() hasn't finished yet, store for later
+        pendingBookData = data;
+      } else {
+        handleOpenBook(data);
+      }
+    });
+
+    async function handleOpenBook(data) {
+      bookId = data.bookId;
+      bookTitle = data.title;
+      $bookTitle.textContent = bookTitle || "Lecteur";
+      await loadPDF();
+    }
+
     async function init() {
+      console.log("[READER] init() starting...");
       appConfig = await window.electronAPI.getConfig();
+      console.log("[READER] config loaded:", appConfig.apiUrl);
       supabaseClient = window.supabase.createClient(appConfig.supabaseUrl, appConfig.supabaseKey);
 
       // Restore reading mode
@@ -364,32 +387,48 @@
       accessToken = session.access_token;
       userEmail = session.user?.email || "";
 
-      // Receive book info from main process
-      window.electronAPI.onOpenBook(async (data) => {
-        bookId = data.bookId;
-        bookTitle = data.title;
-        $bookTitle.textContent = bookTitle || "Lecteur";
-        await loadPDF();
-      });
+      console.log("[READER] init() complete, checking pending book...");
+
+      // If open-book arrived before init completed, process it now
+      if (pendingBookData) {
+        console.log("[READER] Processing pending book:", pendingBookData.bookId);
+        const data = pendingBookData;
+        pendingBookData = null;
+        await handleOpenBook(data);
+      }
     }
 
     // ─── Load PDF ───────────────────────────────────────────
     async function loadPDF() {
+      console.log("[READER] loadPDF() called for bookId:", bookId);
       $loading.style.display = "flex";
       pageImages.clear();
 
       try {
         // Try local first
+        console.log("[READER] Trying local PDF...");
         const local = await window.electronAPI.readLocalPdf(bookId);
         if (local.success && local.data) {
           isDownloaded = true;
           $loadProgress.textContent = "Lecture depuis le stockage local...";
-          pdfDoc = await pdfjsLib.getDocument({ data: local.data }).promise;
+          console.log("[READER] Local PDF found, data type:", typeof local.data, "length:", local.data.length || local.data.byteLength || "unknown");
+          // Ensure data is a proper Uint8Array (IPC serialization may convert it)
+          let pdfData = local.data;
+          if (!(pdfData instanceof Uint8Array)) {
+            console.log("[READER] Converting data to Uint8Array...");
+            if (pdfData.buffer) {
+              pdfData = new Uint8Array(pdfData.buffer);
+            } else if (typeof pdfData === "object") {
+              pdfData = new Uint8Array(Object.values(pdfData));
+            }
+          }
+          pdfDoc = await pdfjsLib.getDocument({ data: pdfData }).promise;
         } else {
           // Stream from API
           isDownloaded = false;
           $loadProgress.textContent = "Téléchargement depuis le serveur...";
           const url = `${appConfig.apiUrl}/api/pdf/${bookId}`;
+          console.log("[READER] Fetching PDF from:", url);
           pdfDoc = await pdfjsLib.getDocument({
             url,
             httpHeaders: { Authorization: `Bearer ${accessToken}` },
@@ -418,8 +457,8 @@
         updateUI();
 
       } catch (err) {
-        console.error("PDF load error:", err);
-        $loadProgress.textContent = "Erreur de chargement";
+        console.error("[READER] PDF load error:", err);
+        $loadProgress.textContent = `Erreur: ${err.message || err}`;
         showToast("❌ Impossible de charger le PDF", "error");
       }
     }
