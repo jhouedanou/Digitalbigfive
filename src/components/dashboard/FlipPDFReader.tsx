@@ -12,10 +12,10 @@ import {
   ZoomIn,
   ZoomOut,
   BookOpen,
-  Smartphone,
 } from "lucide-react";
 import Link from "next/link";
 import type { PDFDocumentProxy, PDFPageProxy } from "@/types/pdfjs.d";
+import InstallPWAButton from "@/components/pwa/InstallPWAButton";
 
 interface FlipPDFReaderProps {
   resourceId: string;
@@ -144,11 +144,6 @@ export default function FlipPDFReader({
     
     ctx.restore();
   }
-
-  // Redirect to app install instead of PDF download
-  const handleInstallApp = () => {
-    window.location.href = "/dashboard/bibliotheque";
-  };
 
   // ─── Desktop Flip Navigation ──────────────────────────────
   const nextSpread = useCallback(() => {
@@ -287,14 +282,8 @@ export default function FlipPDFReader({
           </div>
 
           <div className="flex items-center gap-1 flex-shrink-0">
-            {/* Install App button - replaces download */}
-            <button
-              onClick={handleInstallApp}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#80368D] hover:bg-[#6a2d75] text-white rounded-lg transition text-sm"
-            >
-              <Smartphone className="w-4 h-4" />
-              <span className="hidden sm:inline">Installer l'app</span>
-            </button>
+            {/* Install App button - real PWA prompt */}
+            <InstallPWAButton variant="mini" />
 
             {/* Zoom - desktop only */}
             {!isMobile && (

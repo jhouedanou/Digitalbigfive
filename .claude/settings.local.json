@@ -25,7 +25,8 @@
       "Bash(dir:*)",
       "Bash(git log:*)",
       "Bash(ls:*)",
-      "Bash(^d \")"
+      "Bash(^d \")",
+      "Bash(git ls-tree:*)"
     ]
   }
 }

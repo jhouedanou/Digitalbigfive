@@ -5,6 +5,7 @@ import { BookOpen, Loader2, BookMarked, Search } from "lucide-react";
 import { useAuth } from "@/components/providers/SessionProvider";
 import Link from "next/link";
 import Image from "next/image";
+import InstallPWAButton from "@/components/pwa/InstallPWAButton";
 
 interface Book {
   id: string;
@@ -75,11 +76,19 @@ export default function BibliotequePage() {
                 />
               </div>
             )}
+
+            {/* Install mini button in header */}
+            <InstallPWAButton variant="mini" />
           </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Install PWA banner */}
+        <div className="mb-6">
+          <InstallPWAButton variant="banner" />
+        </div>
+
         {loading ? (
           /* ═══ Loading ═══ */
           <div className="flex flex-col items-center justify-center py-32 gap-4">

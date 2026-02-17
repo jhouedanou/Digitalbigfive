@@ -2,7 +2,7 @@
   "name": "digitalbigfive",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "electron/dist/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +12,14 @@
     "db:push": "prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "electron:compile": "tsc -p electron/tsconfig.json",
+    "electron:dev": "npm run electron:compile && concurrently \"npm run dev\" \"electron .\" --kill-others",
+    "electron:build:win": "npm run electron:compile && electron-builder --win",
+    "electron:build:mac": "npm run electron:compile && electron-builder --mac",
+    "electron:build:linux": "npm run electron:compile && electron-builder --linux",
+    "electron:build:all": "npm run electron:compile && electron-builder --win --mac --linux",
+    "electron:icons": "tsx scripts/generate-electron-icons.ts"
   },
   "repository": {
     "type": "git",
@@ -22,6 +29,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "electron-updater": "^6.3.0",
+    "electron-log": "^5.3.0",
     "@prisma/client": "^6.19.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",
@@ -36,6 +45,9 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.0",
+    "concurrently": "^9.1.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",

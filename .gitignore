@@ -144,3 +144,7 @@ vite.config.ts.timestamp-*
 .env.example
 .vercel
 .env*.local
+
+# Electron
+electron/dist/
+dist-electron/

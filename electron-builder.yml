@@ -1,0 +1,77 @@
+appId: com.bigfive.digital
+productName: Big Five Digital
+copyright: Copyright © 2025 Big Five Agency
+
+directories:
+  output: dist-electron
+  buildResources: electron/assets
+
+files:
+  - electron/dist/**/*
+  - electron/assets/**/*
+
+extraResources:
+  - from: electron/assets/
+    to: assets/
+    filter:
+      - "**/*"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: electron/assets/icon.ico
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  installerIcon: electron/assets/icon.ico
+  uninstallerIcon: electron/assets/icon.ico
+  installerHeaderIcon: electron/assets/icon.ico
+  shortcutName: Big Five Digital
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - universal
+  icon: electron/assets/icon.icns
+  category: public.app-category.education
+  entitlements: electron/entitlements.mac.plist
+  entitlementsInherit: electron/entitlements.mac.plist
+  hardenedRuntime: true
+  gatekeeperAssess: false
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+  icon: electron/assets/icon.png
+  category: Education
+  desktop:
+    StartupWMClass: big-five-digital
+
+protocols:
+  - name: Big Five Digital
+    schemes:
+      - bigfive
+
+publish:
+  provider: github
+  releaseType: release
