@@ -17,7 +17,13 @@ export async function GET() {
     const latestOrder = await prisma.order.findFirst({
       where: { userId: session.user.id },
       include: {
-        resource: { select: { title: true } },
+        resource: { 
+          select: { 
+            id: true,
+            title: true,
+            coverImage: true,
+          } 
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -34,7 +40,9 @@ export async function GET() {
       status: orderStatus === "paid" ? "success" : orderStatus,
       order: {
         orderId: latestOrder.id,
+        productId: latestOrder.resource.id,
         productTitle: latestOrder.resource.title,
+        coverImage: latestOrder.resource.coverImage,
         amount: latestOrder.amount,
         currency: latestOrder.currency,
         date: latestOrder.createdAt.toLocaleDateString("fr-FR", {

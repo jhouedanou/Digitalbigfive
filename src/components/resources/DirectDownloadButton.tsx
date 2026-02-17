@@ -1,14 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface DirectDownloadButtonProps {
   resourceId: string;
   resourceTitle: string;
+  resourceCategory?: string;
+  showUpsellAfterDownload?: boolean;
 }
 
-export default function DirectDownloadButton({ resourceId, resourceTitle }: DirectDownloadButtonProps) {
+export default function DirectDownloadButton({ 
+  resourceId, 
+  resourceTitle,
+  resourceCategory,
+  showUpsellAfterDownload = true,
+}: DirectDownloadButtonProps) {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleDownload() {
     setLoading(true);
@@ -29,6 +38,16 @@ export default function DirectDownloadButton({ resourceId, resourceTitle }: Dire
       
       // Ouvrir le PDF dans un nouvel onglet
       window.open(data.downloadUrl, "_blank");
+
+      // Redirect to thank you page with upsell after a short delay
+      if (showUpsellAfterDownload) {
+        setTimeout(() => {
+          const params = new URLSearchParams();
+          if (resourceCategory) params.set("category", resourceCategory);
+          if (resourceId) params.set("resourceId", resourceId);
+          router.push(`/ressources/merci?${params.toString()}`);
+        }, 500);
+      }
     } catch (error) {
       console.error("Download error:", error);
       alert("Une erreur est survenue. Veuillez réessayer.");

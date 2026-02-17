@@ -268,6 +268,19 @@ export async function getPDF(resourceId: string): Promise<{
         };
         transaction.objectStore(LOG_STORE).add(log);
 
+        // Check if this is a decryption key mismatch error
+        if (error instanceof DOMException && error.name === "OperationError") {
+          // The encryption key has changed (session was lost)
+          // Delete the corrupted PDF and inform the user to re-download
+          console.warn("Clé de chiffrement invalide - le PDF doit être re-téléchargé");
+          
+          // Delete the PDF that can't be decrypted
+          store.delete(resourceId);
+          
+          reject(new Error("La clé de chiffrement a changé. Veuillez re-télécharger ce livre depuis votre dashboard."));
+          return;
+        }
+
         reject(error);
       }
     };
@@ -516,3 +529,87 @@ export async function getStorageInfo(): Promise<{
     availableSpace,
   };
 }
+
+/**
+ * OfflinePDF type for library views
+ */
+export interface OfflinePDF {
+  id: string;
+  resourceId: string;
+  title: string;
+  coverUrl?: string;
+  downloadedAt: number;
+  expiresAt: number;
+  encryptedData: ArrayBuffer;
+  lastReadPage?: number;
+  totalPages?: number;
+}
+
+/**
+ * Get all PDFs with full data for library
+ */
+export async function getAllPDFs(): Promise<OfflinePDF[]> {
+  await initDB();
+  
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+    
+    const transaction = db.transaction([STORE_NAME, META_STORE], "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+    const metaStore = transaction.objectStore(META_STORE);
+    const request = store.getAll();
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = async () => {
+      const storedPDFs: StoredPDF[] = request.result;
+      const metaRequest = metaStore.getAll();
+      
+      metaRequest.onerror = () => reject(metaRequest.error);
+      metaRequest.onsuccess = () => {
+        const metadata: PDFMetadata[] = metaRequest.result;
+        const metaMap = new Map(metadata.map(m => [m.id, m]));
+        
+        const pdfs: OfflinePDF[] = storedPDFs.map(pdf => {
+          const meta = metaMap.get(pdf.id);
+          return {
+            id: pdf.id,
+            resourceId: pdf.id,
+            title: meta?.title || "Document sans titre",
+            downloadedAt: pdf.downloadedAt,
+            expiresAt: meta?.expiresAt || 0,
+            encryptedData: pdf.encryptedData,
+            lastReadPage: undefined,
+            totalPages: undefined,
+          };
+        });
+        
+        resolve(pdfs);
+      };
+    };
+  });
+}
+
+/**
+ * Sync with server - placeholder for future implementation
+ */
+export async function syncWithServer(): Promise<void> {
+  // TODO: Implement server sync
+  console.log("Syncing with server...");
+}
+
+/**
+ * Wrapper object for backward compatibility
+ */
+export const offlineStorage = {
+  getAllPDFs,
+  deletePDF,
+  syncWithServer,
+  getStorageInfo,
+  isPDFAvailableOffline,
+  getPDF,
+  storePDF,
+  cleanupExpiredPDFs,
+};

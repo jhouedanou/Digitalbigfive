@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import DownloadPrompt from "@/components/library/DownloadPrompt";
+import { Download, BookOpen, ArrowRight } from "lucide-react";
 
 interface OrderDetails {
   orderId: string;
   productTitle: string;
+  productId: string;
+  coverImage?: string;
   amount: number;
   currency: string;
   date: string;
@@ -19,6 +23,7 @@ function SuccessContent() {
     "loading"
   );
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
+  const [showDownloadPrompt, setShowDownloadPrompt] = useState(false);
 
   useEffect(() => {
     async function verifyPayment() {
@@ -35,6 +40,8 @@ function SuccessContent() {
           setStatus("success");
           if (data.order) {
             setOrderDetails(data.order);
+            // Auto-show download prompt after payment success
+            setTimeout(() => setShowDownloadPrompt(true), 1000);
           }
         } else if (data.status === "pending") {
           setStatus("pending");
@@ -169,19 +176,48 @@ function SuccessContent() {
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <Link
-          href="/dashboard/produits"
-          className="flex-1 bg-[#80368D] text-white text-center px-6 py-4 rounded-lg font-semibold hover:bg-[#6a2d76] transition-colors"
+        <button
+          onClick={() => setShowDownloadPrompt(true)}
+          className="flex-1 bg-gradient-to-r from-orange-500 to-pink-500 text-white text-center px-6 py-4 rounded-lg font-semibold hover:opacity-90 transition-colors flex items-center justify-center gap-2"
         >
-          Accéder à mes produits
-        </Link>
+          <Download className="w-5 h-5" />
+          Télécharger pour lire hors ligne
+        </button>
         <Link
-          href="/dashboard/historique"
-          className="flex-1 border border-gray-300 text-gray-700 text-center px-6 py-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+          href="/dashboard/bibliotheque"
+          className="flex-1 bg-[#80368D] text-white text-center px-6 py-4 rounded-lg font-semibold hover:bg-[#6a2d76] transition-colors flex items-center justify-center gap-2"
         >
-          Voir mes reçus
+          <BookOpen className="w-5 h-5" />
+          Ma bibliothèque
         </Link>
       </div>
+
+      {/* Quick Access */}
+      <div className="mt-6 text-center">
+        <Link
+          href="/dashboard/historique"
+          className="inline-flex items-center gap-1 text-gray-500 hover:text-[#80368D] transition-colors"
+        >
+          Voir mes reçus
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* Download Prompt Modal */}
+      {orderDetails && (
+        <DownloadPrompt
+          isOpen={showDownloadPrompt}
+          onClose={() => setShowDownloadPrompt(false)}
+          product={{
+            id: orderDetails.productId,
+            title: orderDetails.productTitle,
+            coverImage: orderDetails.coverImage,
+          }}
+          onDownloadComplete={() => {
+            setShowDownloadPrompt(false);
+          }}
+        />
+      )}
     </div>
   );
 }

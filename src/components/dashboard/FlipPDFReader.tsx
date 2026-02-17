@@ -15,37 +15,13 @@ import {
   BookOpen,
 } from "lucide-react";
 import Link from "next/link";
+import type { PDFDocumentProxy, PDFPageProxy } from "@/types/pdfjs.d";
 
 interface FlipPDFReaderProps {
   resourceId: string;
   title: string;
   userEmail: string;
   userName: string;
-}
-
-// PDF.js types
-interface PDFDocument {
-  numPages: number;
-  getPage: (num: number) => Promise<PDFPage>;
-}
-
-interface PDFPage {
-  getViewport: (opts: { scale: number }) => { width: number; height: number };
-  render: (opts: {
-    canvasContext: CanvasRenderingContext2D;
-    viewport: { width: number; height: number };
-  }) => { promise: Promise<void> };
-}
-
-interface PDFLib {
-  GlobalWorkerOptions: { workerSrc: string };
-  getDocument: (opts: { data: ArrayBuffer }) => { promise: Promise<PDFDocument> };
-}
-
-declare global {
-  interface Window {
-    pdfjsLib: PDFLib;
-  }
 }
 
 export default function FlipPDFReader({
@@ -55,8 +31,8 @@ export default function FlipPDFReader({
   userName,
 }: FlipPDFReaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const pdfDocRef = useRef<PDFDocument | null>(null);
-  const pdfDataRef = useRef<string | null>(null);
+  const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
+  const pdfDataRef = useRef<ArrayBuffer | null>(null);
   
   const [currentSpread, setCurrentSpread] = useState(0); // 0 = pages 1-2, 1 = pages 3-4, etc.
   const [totalPages, setTotalPages] = useState(0);
@@ -76,21 +52,7 @@ export default function FlipPDFReader({
 
   // Load PDF.js
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-    script.async = true;
-    script.onload = () => {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      loadPDF();
-    };
-    document.head.appendChild(script);
-    
-    return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
-    };
+    loadPDF();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load PDF
@@ -98,34 +60,45 @@ export default function FlipPDFReader({
     try {
       setLoading(true);
       
-      const res = await fetch("/api/pdf/prepare-offline", {
+      // Get PDF session token
+      const tokenRes = await fetch("/api/pdf/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ resourceId }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Erreur de chargement");
+      if (!tokenRes.ok) {
+        const data = await tokenRes.json().catch(() => ({}));
+        throw new Error(data.error || "Impossible d'obtenir le token de session");
       }
 
-      const { pdf: pdfBase64 } = await res.json();
-      pdfDataRef.current = pdfBase64;
-      
-      // Convert base64 to ArrayBuffer
-      const binaryString = atob(pdfBase64);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
+      const tokenData = await tokenRes.json();
+
+      // Load PDF.js
+      const pdfjsLib = await import("pdfjs-dist");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
+      // Fetch PDF with token
+      const pdfRes = await fetch(`/api/pdf/${resourceId}?token=${encodeURIComponent(tokenData.token)}`, {
+        credentials: "include",
+      });
+
+      if (!pdfRes.ok) {
+        const data = await pdfRes.json().catch(() => ({}));
+        throw new Error(data.error || "Impossible de charger le PDF");
       }
+
+      const pdfArrayBuffer = await pdfRes.arrayBuffer();
+      pdfDataRef.current = pdfArrayBuffer;
       
-      // Load PDF
-      const pdfDoc = await window.pdfjsLib.getDocument({ data: bytes.buffer }).promise;
-      pdfDocRef.current = pdfDoc;
+      // Load PDF document
+      const pdfDoc = await pdfjsLib.getDocument({ data: pdfArrayBuffer }).promise;
+      pdfDocRef.current = pdfDoc as unknown as PDFDocumentProxy;
       setTotalPages(pdfDoc.numPages);
       
       // Pre-render all pages as images
-      await prerenderPages(pdfDoc);
+      await prerenderPages(pdfDoc as any);
       
       setLoading(false);
       
@@ -137,7 +110,7 @@ export default function FlipPDFReader({
   }
 
   // Pre-render pages to images for smooth flipping
-  async function prerenderPages(pdfDoc: PDFDocument) {
+  async function prerenderPages(pdfDoc: PDFDocumentProxy) {
     const images = new Map<number, string>();
     const renderScale = 1.5; // Higher quality for images
     
@@ -195,17 +168,9 @@ export default function FlipPDFReader({
     
     setDownloading(true);
     try {
-      // Convert base64 to blob
-      const binaryString = atob(pdfDataRef.current);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      
-      const blob = new Blob([bytes], { type: "application/pdf" });
+      const blob = new Blob([pdfDataRef.current], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       
-      // Create download link
       const a = document.createElement("a");
       a.href = url;
       a.download = `${title.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;

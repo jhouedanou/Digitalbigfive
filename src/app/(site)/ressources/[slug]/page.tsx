@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import DirectDownloadButton from "@/components/resources/DirectDownloadButton";
+import ProductRecommendations, { getRecommendedProducts } from "@/components/upsell/ProductRecommendations";
 import { FileText, Clock, BarChart3, Calendar, CheckCircle } from "lucide-react";
 
 interface PageProps {
@@ -16,6 +17,13 @@ export default async function FreeResourcePage({ params }: PageProps) {
   });
 
   if (!resource) notFound();
+
+  // Fetch recommended paid products
+  const recommendedProducts = await getRecommendedProducts(
+    resource.category,
+    resource.id,
+    2
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -94,6 +102,7 @@ export default async function FreeResourcePage({ params }: PageProps) {
               <DirectDownloadButton 
                 resourceId={resource.id} 
                 resourceTitle={resource.title}
+                resourceCategory={resource.category}
               />
 
               {/* Features */}
@@ -126,6 +135,17 @@ export default async function FreeResourcePage({ params }: PageProps) {
                 </div>
               )}
             </div>
+
+            {/* Upsell - Compact variant in sidebar */}
+            {recommendedProducts.length > 0 && (
+              <div className="mt-6">
+                <ProductRecommendations
+                  products={recommendedProducts}
+                  variant="compact"
+                  maxProducts={2}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

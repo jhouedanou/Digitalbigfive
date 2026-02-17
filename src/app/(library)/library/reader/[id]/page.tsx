@@ -16,29 +16,7 @@ import {
   ChevronDown
 } from "lucide-react";
 import { getPDF, type PDFMetadata } from "@/lib/offline-storage";
-
-declare global {
-  interface Window {
-    pdfjsLib: {
-      getDocument: (src: { data: ArrayBuffer } | string) => {
-        promise: Promise<PDFDocumentProxy>;
-      };
-      GlobalWorkerOptions: {
-        workerSrc: string;
-      };
-    };
-  }
-}
-
-interface PDFDocumentProxy {
-  numPages: number;
-  getPage: (pageNumber: number) => Promise<PDFPageProxy>;
-}
-
-interface PDFPageProxy {
-  getViewport: (params: { scale: number }) => { width: number; height: number };
-  render: (params: { canvasContext: CanvasRenderingContext2D; viewport: { width: number; height: number } }) => { promise: Promise<void> };
-}
+import type { PDFDocumentProxy, PDFPageProxy } from "@/types/pdfjs.d";
 
 export default function LibraryReaderPage() {
   const params = useParams();
@@ -60,7 +38,7 @@ export default function LibraryReaderPage() {
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load PDF from IndexedDB
   useEffect(() => {
@@ -72,15 +50,19 @@ export default function LibraryReaderPage() {
       setLoading(true);
       setError(null);
 
-      // Load PDF.js
-      if (!window.pdfjsLib) {
-        await new Promise<void>((resolve) => {
+      // Load PDF.js dynamically
+      if (typeof window !== "undefined" && !window.pdfjsLib) {
+        await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
           script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
           script.onload = () => resolve();
+          script.onerror = () => reject(new Error("Failed to load PDF.js"));
           document.head.appendChild(script);
         });
-
+      }
+      
+      // Set worker source after loading
+      if (typeof window !== "undefined" && window.pdfjsLib) {
         window.pdfjsLib.GlobalWorkerOptions.workerSrc = 
           "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
       }
@@ -117,7 +99,13 @@ export default function LibraryReaderPage() {
 
     } catch (err) {
       console.error("Error loading PDF:", err);
-      setError("Impossible de charger le livre. Il est peut-être corrompu.");
+      // Check if this is an encryption key error
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (errorMessage.includes("clé de chiffrement") || errorMessage.includes("re-télécharger")) {
+        setError("La session de lecture a expiré. Veuillez re-télécharger ce livre depuis votre dashboard pour continuer à le lire hors ligne.");
+      } else {
+        setError("Impossible de charger le livre. Il est peut-être corrompu ou doit être re-téléchargé.");
+      }
     } finally {
       setLoading(false);
     }
@@ -330,6 +318,8 @@ export default function LibraryReaderPage() {
   }
 
   if (error) {
+    const isOnline = typeof navigator !== "undefined" && navigator.onLine;
+    
     return (
       <div className="fixed inset-0 bg-gray-900 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
@@ -338,12 +328,28 @@ export default function LibraryReaderPage() {
           </div>
           <h2 className="text-xl font-bold text-white mb-2">Livre non disponible</h2>
           <p className="text-gray-400 mb-6">{error}</p>
-          <button
-            onClick={() => router.push("/library")}
-            className="px-6 py-3 bg-gradient-to-r from-[#80368D] to-[#29358B] text-white rounded-xl font-medium hover:opacity-90 transition"
-          >
-            Retour à la bibliothèque
-          </button>
+          
+          <div className="space-y-3">
+            {isOnline && (
+              <button
+                onClick={() => router.push(`/dashboard/reader/${resourceId}`)}
+                className="w-full px-6 py-3 bg-gradient-to-r from-[#80368D] to-[#29358B] text-white rounded-xl font-medium hover:opacity-90 transition"
+              >
+                Lire en ligne
+              </button>
+            )}
+            <button
+              onClick={() => router.push("/library")}
+              className={`w-full px-6 py-3 ${isOnline ? "bg-white/10 text-white" : "bg-gradient-to-r from-[#80368D] to-[#29358B] text-white"} rounded-xl font-medium hover:opacity-90 transition`}
+            >
+              Retour à la bibliothèque
+            </button>
+            {isOnline && (
+              <p className="text-sm text-gray-500 mt-4">
+                Pour lire hors ligne, téléchargez d&apos;abord le livre depuis votre dashboard.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     );

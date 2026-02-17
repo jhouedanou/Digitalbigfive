@@ -46,6 +46,20 @@ export default function Header() {
               <span className="text-xs text-gray-400">…</span>
             ) : user ? (
               <div className="flex items-center gap-3">
+                {/* User info */}
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 bg-gradient-to-br from-[#80368D] to-[#29358B] rounded-full flex items-center justify-center text-white text-xs font-bold">
+                    {(user.user_metadata?.full_name || user.user_metadata?.name)?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
+                  </div>
+                  <div className="hidden lg:block">
+                    <p className="text-sm font-medium text-gray-900 leading-tight">
+                      {user.user_metadata?.full_name || user.user_metadata?.name || "Utilisateur"}
+                    </p>
+                    <p className="text-xs text-gray-500 leading-tight">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
                 <Link
                   href="/dashboard"
                   className="flex items-center gap-1.5 text-sm font-medium text-[#80368D] hover:text-[#6a2d76] transition-colors"

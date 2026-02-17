@@ -256,25 +256,26 @@ export interface WatermarkData {
   resourceTitle: string;
 }
 
-// Session key management (cleared on browser close)
-const SESSION_KEY_NAME = "pdf_session_key";
+// Session key management - now uses localStorage for persistence across sessions
+// This allows offline PDFs to be decrypted even after browser restart
+const SESSION_KEY_NAME = "pdf_encryption_key";
 
 export function storeSessionKey(keyBase64: string): void {
-  if (typeof sessionStorage !== "undefined") {
-    sessionStorage.setItem(SESSION_KEY_NAME, keyBase64);
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(SESSION_KEY_NAME, keyBase64);
   }
 }
 
 export function getSessionKey(): string | null {
-  if (typeof sessionStorage !== "undefined") {
-    return sessionStorage.getItem(SESSION_KEY_NAME);
+  if (typeof localStorage !== "undefined") {
+    return localStorage.getItem(SESSION_KEY_NAME);
   }
   return null;
 }
 
 export function clearSessionKey(): void {
-  if (typeof sessionStorage !== "undefined") {
-    sessionStorage.removeItem(SESSION_KEY_NAME);
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(SESSION_KEY_NAME);
   }
 }
 

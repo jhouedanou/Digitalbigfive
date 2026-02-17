@@ -59,7 +59,7 @@ export default function LibraryView() {
         coverUrl: pdf.coverUrl,
         downloadedAt: new Date(pdf.downloadedAt),
         expiresAt: new Date(pdf.expiresAt),
-        fileSize: pdf.encryptedData.length,
+        fileSize: pdf.encryptedData.byteLength,
         lastReadPage: pdf.lastReadPage,
         totalPages: pdf.totalPages,
         isExpired: Date.now() > pdf.expiresAt,

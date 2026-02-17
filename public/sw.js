@@ -4,26 +4,31 @@
  */
 
 const CACHE_NAME = "bigfive-reader-v1";
-const STATIC_CACHE = "bigfive-static-v1";
+const STATIC_CACHE = "bigfive-static-v2";
 const PDF_CACHE = "bigfive-pdfs-v1";
 
-// Resources to cache on install
+// Resources to cache on install - only essential files that definitely exist
 const STATIC_ASSETS = [
-  "/",
-  "/dashboard/reader",
   "/manifest.json",
-  "/icons/icon-192x192.png",
-  "/icons/icon-512x512.png",
+  "/pdf.worker.min.mjs",
 ];
 
-// Install event - cache static assets
+// Install event - cache static assets with error handling
 self.addEventListener("install", (event) => {
   console.log("[SW] Installing Service Worker...");
 
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
+    caches.open(STATIC_CACHE).then(async (cache) => {
       console.log("[SW] Caching static assets");
-      return cache.addAll(STATIC_ASSETS);
+      // Cache each asset individually to prevent one failure from breaking all
+      for (const asset of STATIC_ASSETS) {
+        try {
+          await cache.add(asset);
+          console.log("[SW] Cached:", asset);
+        } catch (err) {
+          console.warn("[SW] Failed to cache:", asset, err);
+        }
+      }
     })
   );
 
@@ -60,6 +65,11 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // Ignore non-http(s) requests (chrome-extension, etc.)
+  if (!url.protocol.startsWith("http")) {
+    return;
+  }
 
   // Handle PDF requests specially
   if (url.pathname.startsWith("/api/pdf/") || url.pathname.includes(".pdf")) {

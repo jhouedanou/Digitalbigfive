@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BookOpen, Download, Smartphone, Check, ArrowRight, Wifi, WifiOff, Cloud } from "lucide-react";
+import { BookOpen, Download, Smartphone, Check, ArrowRight, Wifi, WifiOff, Cloud, User } from "lucide-react";
 import { getAllPDFMetadata, cleanupExpiredPDFs, getStorageInfo } from "@/lib/offline-storage";
+import { useAuth } from "@/components/providers/SessionProvider";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -10,6 +11,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function InstallLibraryPage() {
+  const { user } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
@@ -86,16 +88,6 @@ export default function InstallLibraryPage() {
       description: "Lisez vos PDFs sans connexion internet",
     },
     {
-      icon: Smartphone,
-      title: "Application native",
-      description: "Ajoutez l'app à votre écran d'accueil",
-    },
-    {
-      icon: BookOpen,
-      title: "Interface iBooks",
-      description: "Une bibliothèque élégante pour vos livres",
-    },
-    {
       icon: Cloud,
       title: "Synchronisation auto",
       description: "Vos achats se synchronisent automatiquement",
@@ -114,9 +106,32 @@ export default function InstallLibraryPage() {
             Ma Bibliothèque
           </h1>
           <p className="text-gray-400 text-lg max-w-xl mx-auto">
-            Installez l'application pour lire vos PDFs hors ligne, comme sur iBooks
+            Installez l'application pour lire vos PDFs hors ligne et accéder à votre bibliothèque où que vous soyez.
           </p>
         </div>
+
+        {/* User info card */}
+        {user && (
+          <div className="bg-gradient-to-r from-[#80368D]/20 to-[#29358B]/20 border border-[#80368D]/30 rounded-2xl p-6 mb-8">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-[#80368D] to-[#29358B] rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                {(user.user_metadata?.full_name || user.user_metadata?.name)?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white">
+                  {user.user_metadata?.full_name || user.user_metadata?.name || "Utilisateur"}
+                </h3>
+                <p className="text-gray-400 text-sm">
+                  {user.email}
+                </p>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full text-sm">
+                <User className="w-4 h-4 text-[#80368D]" />
+                <span className="text-gray-300">Connecté</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Status card */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8">

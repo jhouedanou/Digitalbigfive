@@ -13,37 +13,13 @@ import {
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import type { PDFDocumentProxy, PDFPageProxy } from "@/types/pdfjs.d";
 
 interface SimplePDFReaderProps {
   resourceId: string;
   title: string;
   userEmail: string;
   userName: string;
-}
-
-// Declare pdf.js types
-interface PDFDocument {
-  numPages: number;
-  getPage: (num: number) => Promise<PDFPage>;
-}
-
-interface PDFPage {
-  getViewport: (opts: { scale: number }) => { width: number; height: number };
-  render: (opts: {
-    canvasContext: CanvasRenderingContext2D;
-    viewport: { width: number; height: number };
-  }) => { promise: Promise<void> };
-}
-
-interface PDFLib {
-  GlobalWorkerOptions: { workerSrc: string };
-  getDocument: (opts: { data: ArrayBuffer }) => { promise: Promise<PDFDocument> };
-}
-
-declare global {
-  interface Window {
-    pdfjsLib: PDFLib;
-  }
 }
 
 export default function SimplePDFReader({
@@ -53,7 +29,7 @@ export default function SimplePDFReader({
   userName,
 }: SimplePDFReaderProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const pdfDocRef = useRef<PDFDocument | null>(null);
+  const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   
   const [pageNum, setPageNum] = useState(1);
   const [totalPages, setTotalPages] = useState(0);

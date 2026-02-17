@@ -149,3 +149,185 @@ p {
   display: flex;
   gap: 2px;
 }
+
+/* =========================
+   E-Reader / Library Styles
+   ========================= */
+
+/* Scrollbar styling for library */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area insets for PWA */
+.safe-area-inset-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Book 3D Effect */
+.book-3d {
+  perspective: 1000px;
+}
+
+.book-3d-inner {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.book-3d:hover .book-3d-inner {
+  transform: rotateY(-10deg) translateZ(10px);
+}
+
+/* Reading progress animation */
+@keyframes reading-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.reading-progress {
+  animation: reading-pulse 2s ease-in-out infinite;
+}
+
+/* Shelf wood texture */
+.shelf-wood {
+  background: linear-gradient(
+    to bottom,
+    #8B4513 0%,
+    #A0522D 30%,
+    #8B4513 50%,
+    #654321 100%
+  );
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* PDF Reader Security Styles */
+.secure-reader {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+.secure-reader canvas {
+  pointer-events: none !important;
+}
+
+@media print {
+  .secure-reader * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  .secure-reader::before {
+    content: "⚠️ L'impression de ce document est interdite.";
+    display: block !important;
+    visibility: visible !important;
+    font-size: 24px;
+    text-align: center;
+    padding: 100px 50px;
+    color: #dc2626;
+  }
+}
+
+/* Theme transitions */
+.theme-transition {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Apple Books-style animations */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+/* Touch feedback */
+.touch-feedback {
+  transition: transform 0.1s ease;
+}
+
+.touch-feedback:active {
+  transform: scale(0.97);
+}
+
+/* Glass morphism for toolbars */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
