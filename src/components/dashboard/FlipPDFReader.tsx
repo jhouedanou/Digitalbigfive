@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Download,
   ChevronLeft,
   ChevronRight,
   Maximize,
@@ -13,6 +12,7 @@ import {
   ZoomIn,
   ZoomOut,
   BookOpen,
+  Smartphone,
 } from "lucide-react";
 import Link from "next/link";
 import type { PDFDocumentProxy, PDFPageProxy } from "@/types/pdfjs.d";
@@ -32,9 +32,9 @@ export default function FlipPDFReader({
 }: FlipPDFReaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
-  const pdfDataRef = useRef<ArrayBuffer | null>(null);
   
-  const [currentSpread, setCurrentSpread] = useState(0); // 0 = pages 1-2, 1 = pages 3-4, etc.
+  const [currentSpread, setCurrentSpread] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1); // For mobile single-page mode
   const [totalPages, setTotalPages] = useState(0);
   const [scale, setScale] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -43,44 +43,35 @@ export default function FlipPDFReader({
   const [isFlipping, setIsFlipping] = useState(false);
   const [flipDirection, setFlipDirection] = useState<"left" | "right" | null>(null);
   const [pageImages, setPageImages] = useState<Map<number, string>>(new Map());
-  const [downloading, setDownloading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Calculate which pages to show
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Calculate which pages to show (desktop flip mode)
   const leftPage = currentSpread * 2 + 1;
   const rightPage = currentSpread * 2 + 2;
   const totalSpreads = Math.ceil(totalPages / 2);
 
-  // Load PDF.js
+  // Load PDF
   useEffect(() => {
     loadPDF();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load PDF
   async function loadPDF() {
     try {
       setLoading(true);
-      
-      // Get PDF session token
-      const tokenRes = await fetch("/api/pdf/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ resourceId }),
-      });
 
-      if (!tokenRes.ok) {
-        const data = await tokenRes.json().catch(() => ({}));
-        throw new Error(data.error || "Impossible d'obtenir le token de session");
-      }
-
-      const tokenData = await tokenRes.json();
-
-      // Load PDF.js
       const pdfjsLib = await import("pdfjs-dist");
       pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
-      // Fetch PDF with token
-      const pdfRes = await fetch(`/api/pdf/${resourceId}?token=${encodeURIComponent(tokenData.token)}`, {
+      // Fetch PDF directement — l'auth se fait via cookies Supabase
+      const pdfRes = await fetch(`/api/pdf/${resourceId}`, {
         credentials: "include",
       });
 
@@ -90,14 +81,11 @@ export default function FlipPDFReader({
       }
 
       const pdfArrayBuffer = await pdfRes.arrayBuffer();
-      pdfDataRef.current = pdfArrayBuffer;
       
-      // Load PDF document
       const pdfDoc = await pdfjsLib.getDocument({ data: pdfArrayBuffer }).promise;
       pdfDocRef.current = pdfDoc as unknown as PDFDocumentProxy;
       setTotalPages(pdfDoc.numPages);
       
-      // Pre-render all pages as images
       await prerenderPages(pdfDoc as any);
       
       setLoading(false);
@@ -109,10 +97,9 @@ export default function FlipPDFReader({
     }
   }
 
-  // Pre-render pages to images for smooth flipping
   async function prerenderPages(pdfDoc: PDFDocumentProxy) {
     const images = new Map<number, string>();
-    const renderScale = 1.5; // Higher quality for images
+    const renderScale = 2;
     
     for (let i = 1; i <= pdfDoc.numPages; i++) {
       try {
@@ -126,11 +113,8 @@ export default function FlipPDFReader({
         
         if (ctx) {
           await page.render({ canvasContext: ctx, viewport }).promise;
-          
-          // Add watermark
           drawWatermark(ctx, viewport.width, viewport.height);
-          
-          images.set(i, canvas.toDataURL("image/jpeg", 0.9));
+          images.set(i, canvas.toDataURL("image/jpeg", 0.92));
         }
       } catch (err) {
         console.error(`Error rendering page ${i}:`, err);
@@ -140,10 +124,9 @@ export default function FlipPDFReader({
     setPageImages(images);
   }
 
-  // Draw watermark
   function drawWatermark(ctx: CanvasRenderingContext2D, width: number, height: number) {
     ctx.save();
-    ctx.globalAlpha = 0.06;
+    ctx.globalAlpha = 0.05;
     ctx.font = "12px Arial";
     ctx.fillStyle = "#80368D";
     
@@ -162,29 +145,12 @@ export default function FlipPDFReader({
     ctx.restore();
   }
 
-  // Download PDF
-  const handleDownload = async () => {
-    if (!pdfDataRef.current) return;
-    
-    setDownloading(true);
-    try {
-      const blob = new Blob([pdfDataRef.current], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${title.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Download error:", err);
-    }
-    setDownloading(false);
+  // Redirect to app install instead of PDF download
+  const handleInstallApp = () => {
+    window.location.href = "/dashboard/bibliotheque";
   };
 
-  // Flip to next spread
+  // ─── Desktop Flip Navigation ──────────────────────────────
   const nextSpread = useCallback(() => {
     if (currentSpread >= totalSpreads - 1 || isFlipping) return;
     
@@ -198,7 +164,6 @@ export default function FlipPDFReader({
     }, 600);
   }, [currentSpread, totalSpreads, isFlipping]);
 
-  // Flip to previous spread
   const prevSpread = useCallback(() => {
     if (currentSpread <= 0 || isFlipping) return;
     
@@ -212,23 +177,33 @@ export default function FlipPDFReader({
     }, 600);
   }, [currentSpread, isFlipping]);
 
+  // ─── Mobile Single-Page Navigation ────────────────────────
+  const nextPage = useCallback(() => {
+    if (currentPage >= totalPages) return;
+    setCurrentPage((p) => p + 1);
+  }, [currentPage, totalPages]);
+
+  const prevPage = useCallback(() => {
+    if (currentPage <= 1) return;
+    setCurrentPage((p) => p - 1);
+  }, [currentPage]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === " ") {
         e.preventDefault();
-        nextSpread();
+        isMobile ? nextPage() : nextSpread();
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
-        prevSpread();
+        isMobile ? prevPage() : prevSpread();
       }
     };
     
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [nextSpread, prevSpread]);
+  }, [nextSpread, prevSpread, nextPage, prevPage, isMobile]);
 
-  // Toggle fullscreen
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -241,15 +216,12 @@ export default function FlipPDFReader({
 
   // Security: Disable right-click
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      e.preventDefault();
-      return false;
-    };
+    const handler = (e: MouseEvent) => { e.preventDefault(); return false; };
     document.addEventListener("contextmenu", handler);
     return () => document.removeEventListener("contextmenu", handler);
   }, []);
 
-  // Security: Block print shortcuts
+  // Security: Block print/save shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (
@@ -263,6 +235,15 @@ export default function FlipPDFReader({
     document.addEventListener("keydown", handler, true);
     return () => document.removeEventListener("keydown", handler, true);
   }, []);
+
+  // Current page info for display
+  const displayPageInfo = isMobile
+    ? `Page ${currentPage} sur ${totalPages}`
+    : `Page ${leftPage}${rightPage <= totalPages ? `-${rightPage}` : ""} sur ${totalPages}`;
+
+  const progressPercent = isMobile
+    ? (currentPage / totalPages) * 100
+    : (leftPage / totalPages) * 100;
 
   if (error) {
     return (
@@ -287,60 +268,57 @@ export default function FlipPDFReader({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col">
       {/* Header */}
-      <header className="bg-black/30 backdrop-blur-sm border-b border-white/10 px-4 py-3">
+      <header className="bg-black/30 backdrop-blur-sm border-b border-white/10 px-3 py-2">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <Link
               href="/dashboard/produits"
-              className="p-2 hover:bg-white/10 rounded-lg transition"
+              className="p-1.5 hover:bg-white/10 rounded-lg transition flex-shrink-0"
             >
               <ChevronLeft className="w-5 h-5 text-white" />
             </Link>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-white font-medium text-sm line-clamp-1">{title}</h1>
               <div className="flex items-center gap-2 text-xs text-gray-400">
-                <BookOpen className="w-3 h-3 text-[#80368D]" />
-                <span>Mode livre • Page {leftPage}{rightPage <= totalPages ? `-${rightPage}` : ""} sur {totalPages}</span>
+                <BookOpen className="w-3 h-3 text-[#80368D] flex-shrink-0" />
+                <span className="truncate">{isMobile ? "Lecture" : "Mode livre"} • {displayPageInfo}</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Download button */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Install App button - replaces download */}
             <button
-              onClick={handleDownload}
-              disabled={downloading || loading}
-              className="flex items-center gap-2 px-4 py-2 bg-[#80368D] hover:bg-[#6a2d75] text-white rounded-lg transition disabled:opacity-50"
+              onClick={handleInstallApp}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#80368D] hover:bg-[#6a2d75] text-white rounded-lg transition text-sm"
             >
-              {downloading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              <span className="hidden sm:inline">Télécharger</span>
+              <Smartphone className="w-4 h-4" />
+              <span className="hidden sm:inline">Installer l'app</span>
             </button>
 
-            {/* Zoom */}
-            <div className="flex items-center gap-1 bg-white/10 rounded-lg px-2 py-1">
-              <button 
-                onClick={() => setScale((s) => Math.max(0.5, s - 0.1))} 
-                className="p-1 hover:bg-white/10 rounded"
-              >
-                <ZoomOut className="w-4 h-4 text-white" />
-              </button>
-              <span className="text-white text-sm px-2 min-w-[50px] text-center">
-                {Math.round(scale * 100)}%
-              </span>
-              <button 
-                onClick={() => setScale((s) => Math.min(2, s + 0.1))} 
-                className="p-1 hover:bg-white/10 rounded"
-              >
-                <ZoomIn className="w-4 h-4 text-white" />
-              </button>
-            </div>
+            {/* Zoom - desktop only */}
+            {!isMobile && (
+              <div className="flex items-center gap-1 bg-white/10 rounded-lg px-2 py-1">
+                <button 
+                  onClick={() => setScale((s) => Math.max(0.5, s - 0.1))} 
+                  className="p-1 hover:bg-white/10 rounded"
+                >
+                  <ZoomOut className="w-4 h-4 text-white" />
+                </button>
+                <span className="text-white text-xs px-1 min-w-[40px] text-center">
+                  {Math.round(scale * 100)}%
+                </span>
+                <button 
+                  onClick={() => setScale((s) => Math.min(2, s + 0.1))} 
+                  className="p-1 hover:bg-white/10 rounded"
+                >
+                  <ZoomIn className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            )}
 
             {/* Fullscreen */}
-            <button onClick={toggleFullscreen} className="p-2 hover:bg-white/10 rounded-lg">
+            <button onClick={toggleFullscreen} className="p-1.5 hover:bg-white/10 rounded-lg">
               {isFullscreen ? (
                 <Minimize className="w-5 h-5 text-white" />
               ) : (
@@ -351,10 +329,10 @@ export default function FlipPDFReader({
         </div>
       </header>
 
-      {/* Book Container */}
+      {/* Content Area */}
       <div 
         ref={containerRef}
-        className="flex-1 flex items-center justify-center p-4 md:p-8 overflow-hidden"
+        className="flex-1 flex items-center justify-center p-1 md:p-4 overflow-hidden"
       >
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4">
@@ -364,12 +342,60 @@ export default function FlipPDFReader({
             </div>
             <p className="text-gray-400">Préparation du livre...</p>
           </div>
+        ) : isMobile ? (
+          /* ═══ MOBILE: Classic single-page mode ═══ */
+          <div className="relative w-full h-full flex items-center justify-center">
+            {/* Page image */}
+            <div className="relative bg-white rounded-lg shadow-2xl overflow-hidden" style={{ maxWidth: "100%", maxHeight: "calc(100vh - 140px)" }}>
+              {pageImages.get(currentPage) ? (
+                <img
+                  src={pageImages.get(currentPage)}
+                  alt={`Page ${currentPage}`}
+                  className="w-full h-full object-contain select-none pointer-events-none"
+                  draggable={false}
+                  style={{ maxHeight: "calc(100vh - 140px)" }}
+                />
+              ) : (
+                <div className="w-full h-64 flex items-center justify-center bg-gray-50">
+                  <Loader2 className="w-8 h-8 text-gray-300 animate-spin" />
+                </div>
+              )}
+            </div>
+
+            {/* Mobile navigation arrows */}
+            {currentPage > 1 && (
+              <button
+                onClick={prevPage}
+                className="absolute left-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white active:bg-black/60 transition z-10"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
+            {currentPage < totalPages && (
+              <button
+                onClick={nextPage}
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white active:bg-black/60 transition z-10"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            )}
+
+            {/* Tap zones for mobile */}
+            <div 
+              className="absolute inset-y-0 left-0 w-1/3 z-[5]"
+              onClick={prevPage}
+            />
+            <div 
+              className="absolute inset-y-0 right-0 w-1/3 z-[5]"
+              onClick={nextPage}
+            />
+          </div>
         ) : (
+          /* ═══ DESKTOP: Flip book mode ═══ */
           <div 
             className="relative perspective-[2000px]"
             style={{ transform: `scale(${scale})` }}
           >
-            {/* Book */}
             <div className="relative flex shadow-2xl rounded-lg overflow-hidden">
               {/* Left Page */}
               <div 
@@ -377,8 +403,8 @@ export default function FlipPDFReader({
                   isFlipping && flipDirection === "right" ? "animate-flip-right" : ""
                 }`}
                 style={{ 
-                  width: "min(45vw, 400px)", 
-                  height: "min(65vh, 566px)",
+                  width: "min(47vw, 480px)", 
+                  height: "min(70vh, 620px)",
                   transformStyle: "preserve-3d",
                 }}
               >
@@ -394,16 +420,14 @@ export default function FlipPDFReader({
                     <span className="text-gray-400">Couverture</span>
                   </div>
                 )}
-                {/* Page number */}
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-gray-400 bg-white/80 px-2 py-0.5 rounded">
                   {leftPage}
                 </div>
-                {/* Page shadow */}
-                <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/10 to-transparent pointer-events-none" />
+                <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-black/8 to-transparent pointer-events-none" />
               </div>
 
               {/* Book spine */}
-              <div className="w-2 bg-gradient-to-r from-gray-300 via-gray-200 to-gray-300 shadow-inner" />
+              <div className="w-1.5 bg-gradient-to-r from-gray-300 via-gray-200 to-gray-300 shadow-inner" />
 
               {/* Right Page */}
               <div 
@@ -411,8 +435,8 @@ export default function FlipPDFReader({
                   isFlipping && flipDirection === "left" ? "animate-flip-left" : ""
                 }`}
                 style={{ 
-                  width: "min(45vw, 400px)", 
-                  height: "min(65vh, 566px)",
+                  width: "min(47vw, 480px)", 
+                  height: "min(70vh, 620px)",
                   transformStyle: "preserve-3d",
                 }}
               >
@@ -435,22 +459,20 @@ export default function FlipPDFReader({
                     </div>
                   </div>
                 )}
-                {/* Page number */}
                 {rightPage <= totalPages && (
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-gray-400 bg-white/80 px-2 py-0.5 rounded">
                     {rightPage}
                   </div>
                 )}
-                {/* Page shadow */}
-                <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/10 to-transparent pointer-events-none" />
+                <div className="absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-black/8 to-transparent pointer-events-none" />
               </div>
             </div>
 
-            {/* Navigation arrows */}
+            {/* Desktop navigation arrows */}
             <button
               onClick={prevSpread}
               disabled={currentSpread <= 0 || isFlipping}
-              className="absolute left-[-60px] top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition disabled:opacity-30 disabled:cursor-not-allowed"
+              className="absolute left-[-50px] top-1/2 -translate-y-1/2 p-2.5 bg-white/10 hover:bg-white/20 rounded-full transition disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-6 h-6 text-white" />
             </button>
@@ -458,12 +480,12 @@ export default function FlipPDFReader({
             <button
               onClick={nextSpread}
               disabled={currentSpread >= totalSpreads - 1 || isFlipping}
-              className="absolute right-[-60px] top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition disabled:opacity-30 disabled:cursor-not-allowed"
+              className="absolute right-[-50px] top-1/2 -translate-y-1/2 p-2.5 bg-white/10 hover:bg-white/20 rounded-full transition disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronRight className="w-6 h-6 text-white" />
             </button>
 
-            {/* Click areas for page turning */}
+            {/* Click areas */}
             <div 
               className="absolute inset-y-0 left-0 w-1/3 cursor-pointer z-10"
               onClick={prevSpread}
@@ -476,45 +498,49 @@ export default function FlipPDFReader({
         )}
       </div>
 
-      {/* Page thumbnails / Progress bar */}
-      <div className="bg-black/30 backdrop-blur-sm border-t border-white/10 px-4 py-3">
+      {/* Progress bar */}
+      <div className="bg-black/30 backdrop-blur-sm border-t border-white/10 px-3 py-2">
         <div className="max-w-4xl mx-auto">
-          {/* Progress bar */}
-          <div className="flex items-center gap-4 mb-2">
-            <span className="text-xs text-gray-400 min-w-[40px]">
-              {Math.round((leftPage / totalPages) * 100)}%
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-xs text-gray-400 min-w-[35px]">
+              {Math.round(progressPercent)}%
             </span>
             <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-[#80368D] to-[#29358B] transition-all duration-300"
-                style={{ width: `${(leftPage / totalPages) * 100}%` }}
+                style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <span className="text-xs text-gray-400 min-w-[60px] text-right">
-              {leftPage}-{Math.min(rightPage, totalPages)} / {totalPages}
+            <span className="text-xs text-gray-400 min-w-[50px] text-right">
+              {isMobile 
+                ? `${currentPage} / ${totalPages}`
+                : `${leftPage}-${Math.min(rightPage, totalPages)} / ${totalPages}`
+              }
             </span>
           </div>
 
-          {/* Quick navigation */}
-          <div className="flex items-center justify-center gap-1 overflow-x-auto py-1">
-            {Array.from({ length: totalSpreads }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => !isFlipping && setCurrentSpread(i)}
-                className={`w-8 h-1 rounded-full transition-all ${
-                  i === currentSpread 
-                    ? "bg-[#80368D] w-12" 
-                    : "bg-white/20 hover:bg-white/40"
-                }`}
-              />
-            ))}
-          </div>
+          {/* Quick navigation dots */}
+          {!isMobile && (
+            <div className="flex items-center justify-center gap-1 overflow-x-auto py-1">
+              {Array.from({ length: totalSpreads }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => !isFlipping && setCurrentSpread(i)}
+                  className={`w-8 h-1 rounded-full transition-all ${
+                    i === currentSpread 
+                      ? "bg-[#80368D] w-12" 
+                      : "bg-white/20 hover:bg-white/40"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Security footer */}
-      <div className="bg-black/50 px-4 py-2">
-        <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+      <div className="bg-black/50 px-3 py-1.5">
+        <div className="flex items-center justify-center gap-3 text-xs text-gray-500">
           <Shield className="w-3 h-3 text-green-500" />
           <span>Document protégé • {userEmail}</span>
           <span>•</span>
@@ -525,37 +551,24 @@ export default function FlipPDFReader({
       {/* CSS for flip animations */}
       <style jsx global>{`
         @keyframes flipLeft {
-          0% {
-            transform: rotateY(0deg);
-          }
-          100% {
-            transform: rotateY(-180deg);
-          }
+          0% { transform: rotateY(0deg); }
+          100% { transform: rotateY(-180deg); }
         }
-        
         @keyframes flipRight {
-          0% {
-            transform: rotateY(0deg);
-          }
-          100% {
-            transform: rotateY(180deg);
-          }
+          0% { transform: rotateY(0deg); }
+          100% { transform: rotateY(180deg); }
         }
-        
         .animate-flip-left {
           animation: flipLeft 0.6s ease-in-out forwards;
           backface-visibility: hidden;
         }
-        
         .animate-flip-right {
           animation: flipRight 0.6s ease-in-out forwards;
           backface-visibility: hidden;
         }
-        
         .perspective-\\[2000px\\] {
           perspective: 2000px;
         }
-        
         .duration-600 {
           transition-duration: 600ms;
         }

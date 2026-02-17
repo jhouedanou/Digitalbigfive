@@ -125,23 +125,7 @@ export default function PDFReader({
 
     async function loadPDF() {
       try {
-        // Step 1: Get a signed viewer token
-        const tokenRes = await fetch("/api/pdf/token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ resourceId }),
-        });
-
-        if (!tokenRes.ok) {
-          const data = await tokenRes.json();
-          setError(data.error || "Impossible d'accéder à ce document.");
-          setLoading(false);
-          return;
-        }
-
-        const { token } = await tokenRes.json();
-
-        // Step 2: Load PDF.js
+        // Step 1: Load PDF.js (auth via cookies Supabase)
         const script = document.createElement("script");
         script.src =
           "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
@@ -162,7 +146,7 @@ export default function PDFReader({
 
           pdfjsLib
             .getDocument({
-              url: `/api/pdf/${resourceId}?token=${encodeURIComponent(token)}`,
+              url: `/api/pdf/${resourceId}`,
               disableAutoFetch: true,
               disableStream: true,
             })

@@ -1,249 +1,249 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BookOpen, Download, Smartphone, Check, ArrowRight, Wifi, WifiOff, Cloud, User } from "lucide-react";
-import { getAllPDFMetadata, cleanupExpiredPDFs, getStorageInfo } from "@/lib/offline-storage";
+import { BookOpen, Loader2, BookMarked, Search } from "lucide-react";
 import { useAuth } from "@/components/providers/SessionProvider";
+import Link from "next/link";
+import Image from "next/image";
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+interface Book {
+  id: string;
+  title: string;
+  coverImage: string;
+  shortDescription: string;
+  category: string;
+  pageCount: number | null;
+  purchasedAt: string;
 }
 
-export default function InstallLibraryPage() {
+export default function BibliotequePage() {
   const { user } = useAuth();
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
-  const [storageInfo, setStorageInfo] = useState({ totalPDFs: 0, totalSize: 0, availableSpace: 0 });
+  const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    // Check online status
-    setIsOnline(navigator.onLine);
-    window.addEventListener("online", () => setIsOnline(true));
-    window.addEventListener("offline", () => setIsOnline(false));
-
-    // Check if already installed
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsInstalled(true);
-    }
-
-    // Listen for install prompt
-    const handleBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
-
-    // Load storage info
-    loadData();
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
-    };
+    loadBooks();
   }, []);
 
-  async function loadData() {
+  async function loadBooks() {
     try {
       setLoading(true);
-      await cleanupExpiredPDFs();
-      const info = await getStorageInfo();
-      setStorageInfo(info);
+      const res = await fetch("/api/profile/books", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setBooks(data.books || []);
+      }
     } catch (error) {
-      console.error("Error loading data:", error);
+      console.error("Error loading books:", error);
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleInstall() {
-    if (!deferredPrompt) {
-      // Fallback for browsers that don't support install prompt
-      window.open("/library", "_blank");
-      return;
-    }
+  const filteredBooks = books.filter((book) =>
+    book.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === "accepted") {
-      setIsInstalled(true);
-    }
-    
-    setDeferredPrompt(null);
-  }
-
-  function formatSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  const features = [
-    {
-      icon: WifiOff,
-      title: "Lecture hors ligne",
-      description: "Lisez vos PDFs sans connexion internet",
-    },
-    {
-      icon: Cloud,
-      title: "Synchronisation auto",
-      description: "Vos achats se synchronisent automatiquement",
-    },
-  ];
+  // Group books by category
+  const categories = [...new Set(filteredBooks.map((b) => b.category))];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#80368D] to-[#29358B] rounded-2xl shadow-lg mb-6">
-            <BookOpen className="w-10 h-10" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            Ma Bibliothèque
-          </h1>
-          <p className="text-gray-400 text-lg max-w-xl mx-auto">
-            Installez l'application pour lire vos PDFs hors ligne et accéder à votre bibliothèque où que vous soyez.
-          </p>
-        </div>
-
-        {/* User info card */}
-        {user && (
-          <div className="bg-gradient-to-r from-[#80368D]/20 to-[#29358B]/20 border border-[#80368D]/30 rounded-2xl p-6 mb-8">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#80368D] to-[#29358B] rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg">
-                {(user.user_metadata?.full_name || user.user_metadata?.name)?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white">
-                  {user.user_metadata?.full_name || user.user_metadata?.name || "Utilisateur"}
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  {user.email}
-                </p>
-              </div>
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full text-sm">
-                <User className="w-4 h-4 text-[#80368D]" />
-                <span className="text-gray-300">Connecté</span>
-              </div>
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -my-8 min-h-screen bg-[#1c1c1e]">
+      {/* ═══ Top bar ═══ */}
+      <div className="sticky top-0 z-20 bg-[#1c1c1e]/95 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-6 h-6 text-[#FF9F0A]" />
+              <h1 className="text-xl font-bold text-white">Bibliothèque</h1>
+              {books.length > 0 && (
+                <span className="text-sm text-gray-500">{books.length} livre{books.length > 1 ? "s" : ""}</span>
+              )}
             </div>
+
+            {/* Search */}
+            {books.length > 0 && (
+              <div className="relative max-w-xs flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Rechercher..."
+                  className="w-full pl-9 pr-4 py-2 bg-white/10 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF9F0A]/50"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {loading ? (
+          /* ═══ Loading ═══ */
+          <div className="flex flex-col items-center justify-center py-32 gap-4">
+            <Loader2 className="w-10 h-10 text-[#FF9F0A] animate-spin" />
+            <p className="text-gray-500">Chargement de votre bibliothèque...</p>
+          </div>
+        ) : books.length === 0 ? (
+          /* ═══ Empty state ═══ */
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <div className="w-24 h-24 bg-gradient-to-br from-[#FF9F0A]/20 to-[#FF6B00]/20 rounded-3xl flex items-center justify-center mb-6">
+              <BookMarked className="w-12 h-12 text-[#FF9F0A]" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Votre bibliothèque est vide</h2>
+            <p className="text-gray-500 mb-8 max-w-md">
+              Vos livres achetés apparaîtront ici. Découvrez nos ressources pour commencer votre collection.
+            </p>
+            <Link
+              href="/produits"
+              className="px-6 py-3 bg-[#FF9F0A] text-black font-semibold rounded-xl hover:bg-[#FFB340] transition"
+            >
+              Découvrir les produits
+            </Link>
+          </div>
+        ) : (
+          /* ═══ Book shelves ═══ */
+          <div className="space-y-10">
+            {/* If search active, show flat grid */}
+            {searchQuery ? (
+              <BookShelf title={`Résultats (${filteredBooks.length})`} books={filteredBooks} />
+            ) : (
+              <>
+                {/* "Récents" — all books sorted by purchase date */}
+                {books.length > 0 && (
+                  <BookShelf title="Récents" books={books.slice(0, 8)} />
+                )}
+
+                {/* By category */}
+                {categories.map((category) => (
+                  <BookShelf
+                    key={category}
+                    title={category}
+                    books={filteredBooks.filter((b) => b.category === category)}
+                  />
+                ))}
+              </>
+            )}
           </div>
         )}
+      </div>
 
-        {/* Status card */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">État de votre bibliothèque</h3>
-            <span className={`flex items-center gap-1 text-sm ${isOnline ? "text-green-400" : "text-orange-400"}`}>
-              {isOnline ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
-              {isOnline ? "En ligne" : "Hors ligne"}
-            </span>
-          </div>
-          
-          {loading ? (
-            <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-white/10 rounded w-1/2"></div>
-              <div className="h-4 bg-white/10 rounded w-1/3"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
-              <div className="bg-white/5 rounded-xl p-4">
-                <p className="text-2xl font-bold text-[#80368D]">{storageInfo.totalPDFs}</p>
-                <p className="text-sm text-gray-400">Livres téléchargés</p>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4">
-                <p className="text-2xl font-bold">{formatSize(storageInfo.totalSize)}</p>
-                <p className="text-sm text-gray-400">Stockage utilisé</p>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4 col-span-2 md:col-span-1">
-                <p className="text-2xl font-bold text-green-400">{formatSize(storageInfo.availableSpace)}</p>
-                <p className="text-sm text-gray-400">Espace disponible</p>
-              </div>
-            </div>
-          )}
-        </div>
+      {/* ═══ iBooks shelf styling ═══ */}
+      <style jsx global>{`
+        .book-cover {
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          transform-style: preserve-3d;
+        }
+        .book-cover:hover {
+          transform: scale(1.05) translateY(-8px);
+          box-shadow: 
+            0 20px 40px rgba(0, 0, 0, 0.5),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+        .book-spine {
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 4px;
+          background: linear-gradient(to right, rgba(0,0,0,0.3), rgba(0,0,0,0.1), rgba(255,255,255,0.05));
+          border-radius: 2px 0 0 2px;
+          z-index: 2;
+        }
+        .shelf-wood {
+          background: linear-gradient(180deg, 
+            #5c3d2e 0%, 
+            #8b6914 8%, 
+            #a0824a 12%,
+            #7a5a30 18%,
+            #6b4423 30%, 
+            #5c3d2e 100%
+          );
+          box-shadow: 
+            0 2px 8px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+        }
+      `}</style>
+    </div>
+  );
+}
 
-        {/* Features */}
-        <div className="grid md:grid-cols-2 gap-4 mb-8">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="flex items-start gap-4 bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition"
-            >
-              <div className="w-10 h-10 bg-[#80368D]/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                <feature.icon className="w-5 h-5 text-[#80368D]" />
-              </div>
-              <div>
-                <h4 className="font-medium mb-1">{feature.title}</h4>
-                <p className="text-sm text-gray-400">{feature.description}</p>
-              </div>
-            </div>
+/* ═══ Book Shelf Component ═══ */
+function BookShelf({ title, books }: { title: string; books: Book[] }) {
+  if (books.length === 0) return null;
+
+  return (
+    <div>
+      <h2 className="text-lg font-semibold text-gray-300 mb-4 px-1">{title}</h2>
+
+      {/* Books row */}
+      <div className="relative">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-2 pb-1">
+          {books.map((book) => (
+            <BookCard key={book.id} book={book} />
           ))}
         </div>
 
-        {/* Install button */}
-        <div className="text-center space-y-4">
-          {isInstalled ? (
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-green-500/20 text-green-400 rounded-xl">
-              <Check className="w-5 h-5" />
-              Application installée
-            </div>
-          ) : (
-            <button
-              onClick={handleInstall}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#80368D] to-[#29358B] rounded-xl font-semibold text-lg hover:opacity-90 transition shadow-lg"
-            >
-              <Download className="w-5 h-5" />
-              Installer l'application
-            </button>
-          )}
-
-          <div>
-            <a
-              href="/library"
-              className="inline-flex items-center gap-2 text-[#80368D] hover:underline"
-            >
-              Ouvrir la bibliothèque dans le navigateur
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </div>
-        </div>
-
-        {/* Instructions */}
-        <div className="mt-12 bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h3 className="font-semibold mb-4">Comment ça marche ?</h3>
-          <ol className="space-y-4 text-gray-300">
-            <li className="flex gap-3">
-              <span className="w-6 h-6 bg-[#80368D] rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
-              <span>Installez l'application "Ma Bibliothèque" sur votre appareil</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="w-6 h-6 bg-[#80368D] rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
-              <span>Connectez-vous une première fois pour synchroniser vos achats</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="w-6 h-6 bg-[#80368D] rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
-              <span>Vos PDFs sont téléchargés et disponibles même sans internet</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="w-6 h-6 bg-[#80368D] rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">4</span>
-              <span>Lisez vos livres n'importe où, n'importe quand !</span>
-            </li>
-          </ol>
-        </div>
-
-        {/* iOS instructions */}
-        <div className="mt-6 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-sm">
-          <p className="font-medium text-blue-400 mb-2">📱 Sur iPhone/iPad :</p>
-          <p className="text-gray-300">
-            Ouvrez <a href="/library" className="text-blue-400 underline">la bibliothèque</a> dans Safari, 
-            puis appuyez sur le bouton Partager et sélectionnez "Sur l'écran d'accueil".
-          </p>
-        </div>
+        {/* Wooden shelf */}
+        <div className="shelf-wood h-3 rounded-sm -mt-1 relative z-0" />
+        <div className="h-2 bg-gradient-to-b from-black/20 to-transparent" />
       </div>
     </div>
+  );
+}
+
+/* ═══ Book Card Component ═══ */
+function BookCard({ book }: { book: Book }) {
+  return (
+    <Link
+      href={`/dashboard/reader/${book.id}`}
+      className="group flex flex-col items-center"
+    >
+      {/* Book cover with 3D effect */}
+      <div className="book-cover relative rounded-sm overflow-hidden shadow-lg cursor-pointer"
+        style={{ width: "140px", height: "200px" }}
+      >
+        {/* Spine effect */}
+        <div className="book-spine" />
+
+        {/* Cover image */}
+        {book.coverImage ? (
+          <Image
+            src={book.coverImage}
+            alt={book.title}
+            fill
+            className="object-cover"
+            sizes="140px"
+          />
+        ) : (
+          /* Fallback cover */
+          <div className="w-full h-full bg-gradient-to-br from-[#80368D] to-[#29358B] flex flex-col items-center justify-center p-3 text-center">
+            <BookOpen className="w-8 h-8 text-white/60 mb-2" />
+            <span className="text-white/90 text-xs font-medium leading-tight line-clamp-3">
+              {book.title}
+            </span>
+          </div>
+        )}
+
+        {/* Glossy reflection overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20 pointer-events-none" />
+
+        {/* Page edge effect (right side) */}
+        <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-gradient-to-l from-gray-300/30 to-transparent" />
+      </div>
+
+      {/* Title */}
+      <div className="mt-2 w-[140px] text-center px-1">
+        <p className="text-white text-xs font-medium line-clamp-2 leading-tight group-hover:text-[#FF9F0A] transition-colors">
+          {book.title}
+        </p>
+        {book.pageCount && (
+          <p className="text-gray-600 text-[10px] mt-0.5">{book.pageCount} pages</p>
+        )}
+      </div>
+    </Link>
   );
 }

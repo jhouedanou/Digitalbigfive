@@ -247,26 +247,11 @@ export default function SecurePDFReader({
 
     async function initSession() {
       try {
-        // Obtenir un token de session
-        const tokenRes = await fetch("/api/pdf/token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ resourceId }),
-        });
-
-        if (!tokenRes.ok) {
-          const data = await tokenRes.json();
-          setError(data.error || "Impossible d'accéder à ce document.");
-          setLoading(false);
-          return;
-        }
-
-        const { token, sessionId, expiresIn } = await tokenRes.json();
-        
+        // Session simplifiée — l'auth se fait via cookies Supabase
         setSession({
-          token,
-          sessionId,
-          expiresAt: Date.now() + expiresIn * 1000,
+          token: "cookie-auth",
+          sessionId: "direct",
+          expiresAt: Date.now() + 30 * 60 * 1000,
           isActive: true,
         });
 
@@ -285,7 +270,7 @@ export default function SecurePDFReader({
           "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
         const pdf = await pdfjsLib.getDocument({
-          url: `/api/pdf/${resourceId}?token=${encodeURIComponent(token)}`,
+          url: `/api/pdf/${resourceId}`,
           disableAutoFetch: true,
           disableStream: true,
         }).promise;
@@ -295,10 +280,6 @@ export default function SecurePDFReader({
         pdfDocRef.current = pdf;
         setTotalPages((pdf as { numPages: number }).numPages);
         setLoading(false);
-
-        // Démarrer le refresh automatique du token
-        startTokenRefresh(token);
-        startHeartbeat(token);
 
       } catch (err) {
         if (!cancelled) {

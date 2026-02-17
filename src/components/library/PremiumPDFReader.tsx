@@ -192,32 +192,13 @@ export default function PremiumPDFReader({
 
     try {
       console.log("[PremiumPDFReader] Starting to load PDF:", resourceId);
-      
-      // Get PDF session token
-      const tokenRes = await fetch("/api/pdf/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ resourceId }),
-      });
-      
-      console.log("[PremiumPDFReader] Token response status:", tokenRes.status);
-      
-      if (!tokenRes.ok) {
-        const errorData = await tokenRes.json().catch(() => ({}));
-        console.error("[PremiumPDFReader] Token error:", errorData);
-        throw new Error(errorData.error || "Impossible d'obtenir le token de session");
-      }
-
-      const tokenData = await tokenRes.json();
-      console.log("[PremiumPDFReader] Token received, fetching PDF...");
 
       // Load PDF.js
       const pdfjsLib = await import("pdfjs-dist");
       pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
-      // Fetch PDF - token must be in query parameter, not header
-      const pdfUrl = `/api/pdf/${resourceId}?token=${encodeURIComponent(tokenData.token)}`;
+      // Fetch PDF directement — l'auth se fait via cookies Supabase
+      const pdfUrl = `/api/pdf/${resourceId}`;
       console.log("[PremiumPDFReader] Fetching PDF from:", pdfUrl);
       
       const pdfRes = await fetch(pdfUrl, {
