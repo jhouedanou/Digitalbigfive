@@ -50,7 +50,7 @@ interface PlatformApp {
   icon: React.ComponentType<{ className?: string }>;
   description: string;
   downloadUrl?: string;
-  status: "available" | "coming-soon" | "beta";
+  status: "available" | "coming-soon" | "beta" | "pwa";
   version?: string;
   size?: string;
   requirements?: string;
@@ -66,24 +66,24 @@ const PLATFORMS: PlatformApp[] = [
     name: "iOS",
     platform: "iPhone & iPad",
     icon: Apple,
-    description: "Application native pour iOS avec lecture hors ligne et synchronisation iCloud",
-    downloadUrl: "https://apps.apple.com/app/ma-bibliotheque",
-    status: "coming-soon",
+    description: "Installez l'application web progressive (PWA) directement depuis Safari. Appuyez sur Partager puis 'Sur l'écran d'accueil' pour une expérience native avec lecture hors ligne.",
+    downloadUrl: "/library",
+    status: "pwa",
     version: APP_VERSION,
-    size: "45 MB",
-    requirements: "iOS 15.0 ou ultérieur",
+    size: "Légère",
+    requirements: "iOS 14.0+ avec Safari",
   },
   {
     id: "android",
     name: "Android",
     platform: "Smartphones & Tablettes",
     icon: AndroidIcon,
-    description: "Application pour tous les appareils Android avec mode hors ligne",
-    downloadUrl: "https://play.google.com/store/apps/details?id=com.digitalbigfive.library",
-    status: "coming-soon",
+    description: "Installez l'application web progressive (PWA) depuis Chrome. Appuyez sur le menu ⋮ puis 'Installer l'application' pour une expérience native avec mode hors ligne.",
+    downloadUrl: "/library",
+    status: "pwa",
     version: APP_VERSION,
-    size: "38 MB",
-    requirements: "Android 8.0 ou ultérieur",
+    size: "Légère",
+    requirements: "Android 8.0+ avec Chrome",
   },
   {
     id: "macos",
@@ -259,6 +259,11 @@ export default function AppsDownloadPage() {
                         Bêta
                       </span>
                     )}
+                    {platform.status === "pwa" && (
+                      <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">
+                        PWA
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-gray-400">{platform.platform}</p>
                 </div>
@@ -274,6 +279,15 @@ export default function AppsDownloadPage() {
                       <Download className="w-4 h-4" />
                       Télécharger
                     </a>
+                  ) : platform.status === "pwa" ? (
+                    <Link
+                      href="/library"
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg font-medium hover:opacity-90 transition"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Installer
+                    </Link>
                   ) : (
                     <ChevronRight
                       className={`w-5 h-5 text-gray-400 transition-transform ${
@@ -310,7 +324,35 @@ export default function AppsDownloadPage() {
                     )}
                   </div>
 
-                  {platform.status === "coming-soon" ? (
+                  {platform.status === "pwa" ? (
+                    <div className="space-y-4">
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                        <h4 className="font-medium text-sm mb-2 text-green-400">📱 Comment installer :</h4>
+                        {platform.id === "ios" ? (
+                          <ol className="text-sm text-gray-400 space-y-1 list-decimal list-inside">
+                            <li>Ouvrez la bibliothèque dans <strong className="text-white">Safari</strong></li>
+                            <li>Appuyez sur l&apos;icône <strong className="text-white">Partager</strong> (↑)</li>
+                            <li>Sélectionnez <strong className="text-white">&quot;Sur l&apos;écran d&apos;accueil&quot;</strong></li>
+                            <li>Confirmez en appuyant sur <strong className="text-white">Ajouter</strong></li>
+                          </ol>
+                        ) : (
+                          <ol className="text-sm text-gray-400 space-y-1 list-decimal list-inside">
+                            <li>Ouvrez la bibliothèque dans <strong className="text-white">Chrome</strong></li>
+                            <li>Appuyez sur le menu <strong className="text-white">⋮</strong> (trois points)</li>
+                            <li>Sélectionnez <strong className="text-white">&quot;Installer l&apos;application&quot;</strong></li>
+                            <li>Confirmez l&apos;installation</li>
+                          </ol>
+                        )}
+                      </div>
+                      <Link
+                        href="/library"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl font-medium hover:opacity-90 transition"
+                      >
+                        <ExternalLink className="w-5 h-5" />
+                        Ouvrir la bibliothèque
+                      </Link>
+                    </div>
+                  ) : platform.status === "coming-soon" ? (
                     notifySubmitted === platform.id ? (
                       <div className="flex items-center gap-2 text-green-400">
                         <Check className="w-5 h-5" />
