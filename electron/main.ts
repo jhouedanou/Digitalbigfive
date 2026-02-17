@@ -60,34 +60,48 @@ function getPdfsDir(): string {
 }
 
 // ─── Environment variables ──────────────────────────────────
+// Public Supabase credentials (anon/publishable key) — safe to embed in client code.
+// These are protected by Row-Level Security on the Supabase side.
+const SUPABASE_URL = "https://jqsyxftdargaottivpeh.supabase.co";
+const SUPABASE_ANON_KEY =
+  "sb_publishable_Gfv70fHn_PBjuLN_cakNoQ_8CQVb7E1";
+
 function loadEnvConfig(): { supabaseUrl: string; supabaseKey: string } {
-  if (!app.isPackaged) {
-    try {
-      const envPath = path.join(__dirname, "..", "..", ".env.local");
-      if (fs.existsSync(envPath)) {
-        const envContent = fs.readFileSync(envPath, "utf-8");
-        const vars: Record<string, string> = {};
-        envContent.split("\n").forEach((line) => {
-          const match = line.match(/^([^#=]+)=(.*)$/);
-          if (match) {
-            vars[match[1].trim()] = match[2].trim().replace(/^["']|["']$/g, "");
-          }
-        });
-        if (vars.NEXT_PUBLIC_SUPABASE_URL && vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) {
-          return {
-            supabaseUrl: vars.NEXT_PUBLIC_SUPABASE_URL,
-            supabaseKey: vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
-          };
-        }
-      }
-    } catch (err) {
-      log.error("Failed to read .env.local:", err);
-    }
+  // In packaged mode, use the embedded public credentials directly
+  if (app.isPackaged) {
+    return {
+      supabaseUrl: SUPABASE_URL,
+      supabaseKey: SUPABASE_ANON_KEY,
+    };
   }
 
+  // In development, try to read from .env.local first
+  try {
+    const envPath = path.join(__dirname, "..", "..", ".env.local");
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, "utf-8");
+      const vars: Record<string, string> = {};
+      envContent.split("\n").forEach((line) => {
+        const match = line.match(/^([^#=]+)=(.*)$/);
+        if (match) {
+          vars[match[1].trim()] = match[2].trim().replace(/^["']|["']$/g, "");
+        }
+      });
+      if (vars.NEXT_PUBLIC_SUPABASE_URL && vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) {
+        return {
+          supabaseUrl: vars.NEXT_PUBLIC_SUPABASE_URL,
+          supabaseKey: vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
+        };
+      }
+    }
+  } catch (err) {
+    log.error("Failed to read .env.local:", err);
+  }
+
+  // Fallback to embedded credentials
   return {
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || "",
+    supabaseUrl: SUPABASE_URL,
+    supabaseKey: SUPABASE_ANON_KEY,
   };
 }
 
