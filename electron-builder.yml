@@ -9,6 +9,8 @@ directories:
 files:
   - electron/dist/**/*
   - electron/assets/**/*
+  - "!node_modules/@img/sharp*"
+  - "!node_modules/sharp*"
 
 extraResources:
   - from: electron/assets/
@@ -48,6 +50,7 @@ mac:
   entitlementsInherit: electron/entitlements.mac.plist
   hardenedRuntime: true
   gatekeeperAssess: false
+  x64ArchFiles: "Contents/Resources/app.asar.unpacked/node_modules/@img/sharp-darwin-x64/**/*"
 
 dmg:
   contents:
