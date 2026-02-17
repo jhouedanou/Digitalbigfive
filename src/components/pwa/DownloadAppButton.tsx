@@ -16,7 +16,7 @@ import {
 // ═══════════════════════════════════════════════
 // Configuration des téléchargements
 // ═══════════════════════════════════════════════
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.0.1";
 const GITHUB_REPO = "jhouedanou/Digitalbigfive";
 const GITHUB_RELEASES_BASE = `https://github.com/${GITHUB_REPO}/releases/latest/download`;
 
