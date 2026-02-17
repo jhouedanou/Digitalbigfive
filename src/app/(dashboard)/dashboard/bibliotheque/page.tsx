@@ -50,9 +50,9 @@ export default function BibliotequePage() {
   const categories = [...new Set(filteredBooks.map((b) => b.category))];
 
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -my-8 min-h-screen bg-[#1c1c1e]">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -my-8 min-h-screen library-wood-bg">
       {/* ═══ Top bar ═══ */}
-      <div className="sticky top-0 z-20 bg-[#1c1c1e]/95 backdrop-blur-xl border-b border-white/10">
+      <div className="sticky top-0 z-20 bg-[#1e1610]/95 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -141,6 +141,34 @@ export default function BibliotequePage() {
 
       {/* ═══ iBooks shelf styling ═══ */}
       <style jsx global>{`
+        .library-wood-bg {
+          background:
+            repeating-linear-gradient(
+              90deg,
+              transparent,
+              transparent 18px,
+              rgba(139, 90, 43, 0.04) 18px,
+              rgba(139, 90, 43, 0.04) 20px
+            ),
+            repeating-linear-gradient(
+              175deg,
+              transparent,
+              transparent 60px,
+              rgba(101, 67, 33, 0.06) 60px,
+              rgba(101, 67, 33, 0.06) 62px
+            ),
+            radial-gradient(
+              ellipse at 30% 20%,
+              rgba(92, 61, 46, 0.15) 0%,
+              transparent 60%
+            ),
+            radial-gradient(
+              ellipse at 70% 80%,
+              rgba(62, 39, 35, 0.12) 0%,
+              transparent 50%
+            ),
+            linear-gradient(180deg, #1e1610 0%, #2a1f16 30%, #1c1510 70%, #18120d 100%);
+        }
         .book-cover {
           transition: transform 0.3s ease, box-shadow 0.3s ease;
           transform-style: preserve-3d;
