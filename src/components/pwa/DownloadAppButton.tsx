@@ -21,10 +21,10 @@ const GITHUB_REPO = "jhouedanou/Digitalbigfive";
 const GITHUB_RELEASES_BASE = `https://github.com/${GITHUB_REPO}/releases/latest/download`;
 
 const DOWNLOAD_URLS = {
-  windows: `${GITHUB_RELEASES_BASE}/Big%20Five%20Digital%20Setup%20${APP_VERSION}.exe`,
-  mac_arm64: `${GITHUB_RELEASES_BASE}/Big%20Five%20Digital-${APP_VERSION}-arm64.dmg`,
-  mac_x64: `${GITHUB_RELEASES_BASE}/Big%20Five%20Digital-${APP_VERSION}.dmg`,
-  linux_appimage: `${GITHUB_RELEASES_BASE}/Big%20Five%20Digital-${APP_VERSION}.AppImage`,
+  windows: `${GITHUB_RELEASES_BASE}/Big-Five-Digital-Setup-${APP_VERSION}.exe`,
+  mac_arm64: `${GITHUB_RELEASES_BASE}/Big-Five-Digital-${APP_VERSION}-arm64.dmg`,
+  mac_x64: `${GITHUB_RELEASES_BASE}/Big-Five-Digital-${APP_VERSION}.dmg`,
+  linux_appimage: `${GITHUB_RELEASES_BASE}/Big-Five-Digital-${APP_VERSION}.AppImage`,
   linux_deb: `${GITHUB_RELEASES_BASE}/big-five-digital_${APP_VERSION}_amd64.deb`,
 } as const;
 
