@@ -45,10 +45,10 @@ export default function FlipPDFReader({
   const [flipDirection, setFlipDirection] = useState<"left" | "right" | null>(null);
   const [pageImages, setPageImages] = useState<Map<number, string>>(new Map());
   const [isMobile, setIsMobile] = useState(false);
-  const [readingMode, setReadingMode] = useState<"book" | "classic">("book");
+  const [readingMode, setReadingMode] = useState<"book" | "classic">("classic");
 
-  // Derived: use classic single-page mode?
-  const useClassicMode = isMobile || readingMode === "classic";
+  // Derived: always use classic single-page mode (flip disabled)
+  const useClassicMode = true;
 
   // Load reading mode preference from localStorage
   useEffect(() => {
@@ -304,32 +304,14 @@ export default function FlipPDFReader({
               <h1 className="text-white font-medium text-sm line-clamp-1">{title}</h1>
               <div className="flex items-center gap-2 text-xs text-gray-400">
                 <BookOpen className="w-3 h-3 text-[#80368D] flex-shrink-0" />
-                <span className="truncate">{useClassicMode ? "Mode classique" : "Mode livre"} • {displayPageInfo}</span>
+                <span className="truncate">{displayPageInfo}</span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Toggle reading mode + Install app - grouped */}
+            {/* Install app button */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={toggleReadingMode}
-                className="flex items-center gap-1.5 px-3 py-2 bg-[#80368D]/80 hover:bg-[#80368D] rounded-lg transition text-white text-xs font-medium border border-white/20"
-                title={readingMode === "book" ? "Passer en mode classique" : "Passer en mode livre"}
-              >
-                {readingMode === "book" ? (
-                  <>
-                    <FileText className="w-4 h-4" />
-                    <span>Classique</span>
-                  </>
-                ) : (
-                  <>
-                    <BookOpen className="w-4 h-4" />
-                    <span>Livre</span>
-                  </>
-                )}
-              </button>
-
               {/* Download / Install App button */}
               <DownloadAppButton variant="compact" />
             </div>
@@ -560,22 +542,7 @@ export default function FlipPDFReader({
             </span>
           </div>
 
-          {/* Quick navigation dots */}
-          {!useClassicMode && (
-            <div className="flex items-center justify-center gap-1 overflow-x-auto py-1">
-              {Array.from({ length: totalSpreads }, (_, i) => (
-                <button
-                  key={i}
-                  onClick={() => !isFlipping && setCurrentSpread(i)}
-                  className={`w-8 h-1 rounded-full transition-all ${
-                    i === currentSpread 
-                      ? "bg-[#80368D] w-12" 
-                      : "bg-white/20 hover:bg-white/40"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
+
         </div>
       </div>
 

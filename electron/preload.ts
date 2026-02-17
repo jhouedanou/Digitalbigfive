@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   openStorageFolder: () =>
     ipcRenderer.send("open-storage-folder"),
 
+  // Get pending book (fallback for race condition with open-book event)
+  getPendingBook: () => ipcRenderer.invoke("get-pending-book"),
+
   // Events from main
   onOpenBook: (callback: (data: { bookId: string; title: string }) => void) =>
     ipcRenderer.on("open-book", (_event, data) => callback(data)),

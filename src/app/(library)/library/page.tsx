@@ -382,18 +382,6 @@ export default function LibraryPage() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
           <div className="bg-gray-800 w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-6">
             <h3 className="text-xl font-bold text-white mb-6">Paramètres</h3>
-            
-            {/* Storage info */}
-            <div className="bg-white/5 rounded-xl p-4 mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400">Stockage utilisé</span>
-                <span className="text-white font-medium">{formatSize(storageInfo.totalSize)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Livres téléchargés</span>
-                <span className="text-white font-medium">{storageInfo.totalPDFs}</span>
-              </div>
-            </div>
 
             {/* Actions */}
             <div className="space-y-2">

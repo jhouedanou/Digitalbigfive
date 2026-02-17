@@ -30,7 +30,8 @@
       "Bash(npm run electron:compile:*)",
       "Bash(npx electron-builder:*)",
       "Bash(set:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(netstat:*)"
     ]
   }
 }

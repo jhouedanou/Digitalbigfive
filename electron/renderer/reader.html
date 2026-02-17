@@ -245,7 +245,7 @@
         <span class="reader-title" id="book-title">Chargement...</span>
       </div>
       <div class="reader-header-right">
-        <button class="mode-btn" id="mode-toggle" title="Mode de lecture">📖 Livre</button>
+        <button class="mode-btn" id="mode-toggle" title="Mode de lecture" style="display:none;">📄 Classique</button>
         <button class="btn-icon" id="zoom-out" title="Zoom -">−</button>
         <span id="zoom-level" style="font-size:11px;color:var(--text-muted);min-width:36px;text-align:center;">100%</span>
         <button class="btn-icon" id="zoom-in" title="Zoom +">+</button>
@@ -303,17 +303,13 @@
   <script src="./supabase.min.js"></script>
 
   <script type="module">
-    // ─── pdf.js Setup (local files) ───────────────────────────
-    const pdfjsLib = await import("./pdf.min.mjs");
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "./pdf.worker.min.mjs";
-
     // ─── State ──────────────────────────────────────────────
     let pdfDoc = null;
     let totalPages = 0;
     let currentPage = 1;         // 1-based, single page
     let currentSpread = 0;       // 0-based, spread index
     let scale = 1.0;
-    let readingMode = "book";    // "book" or "classic"
+    let readingMode = "classic";  // forced to classic (flip disabled)
     let pageImages = new Map();  // pageNum -> dataURL
     let bookId = null;
     let bookTitle = "";
@@ -323,6 +319,25 @@
     let userEmail = "";
     let isDownloaded = false;
     let supabaseClient = null;
+
+    // ─── Pending book data ──────────────────────────────────
+    // Register onOpenBook listener IMMEDIATELY (before any async work)
+    // to avoid missing the event from main process (race condition fix)
+    let pendingBookData = null;
+
+    window.electronAPI.onOpenBook((data) => {
+      console.log("[READER] Received open-book:", data.bookId, data.title);
+      if (!appConfig) {
+        // init() hasn't finished yet, store for later
+        pendingBookData = data;
+      } else {
+        handleOpenBook(data);
+      }
+    });
+
+    // ─── pdf.js Setup (local files) ───────────────────────────
+    const pdfjsLib = await import("./pdf.min.mjs");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "./pdf.worker.min.mjs";
 
     // ─── DOM Elements ───────────────────────────────────────
     const $viewport = document.getElementById("viewport");
@@ -341,22 +356,6 @@
     const $bookTitle = document.getElementById("book-title");
     const $downloadBanner = document.getElementById("download-banner");
 
-    // ─── Init ───────────────────────────────────────────────
-    // Pending book data in case open-book arrives before init completes
-    let pendingBookData = null;
-
-    // Register onOpenBook listener IMMEDIATELY (before any async work)
-    // to avoid missing the event from main process
-    window.electronAPI.onOpenBook((data) => {
-      console.log("[READER] Received open-book:", data.bookId, data.title);
-      if (!appConfig) {
-        // init() hasn't finished yet, store for later
-        pendingBookData = data;
-      } else {
-        handleOpenBook(data);
-      }
-    });
-
     async function handleOpenBook(data) {
       bookId = data.bookId;
       bookTitle = data.title;
@@ -370,11 +369,8 @@
       console.log("[READER] config loaded:", appConfig.apiUrl);
       supabaseClient = window.supabase.createClient(appConfig.supabaseUrl, appConfig.supabaseKey);
 
-      // Restore reading mode
-      try {
-        const saved = localStorage.getItem("electron-reading-mode");
-        if (saved === "book" || saved === "classic") readingMode = saved;
-      } catch {}
+      // Reading mode forced to classic (flip disabled)
+      readingMode = "classic";
 
       updateModeButton();
 
@@ -391,10 +387,22 @@
 
       // If open-book arrived before init completed, process it now
       if (pendingBookData) {
-        console.log("[READER] Processing pending book:", pendingBookData.bookId);
+        console.log("[READER] Processing pending book from event:", pendingBookData.bookId);
         const data = pendingBookData;
         pendingBookData = null;
         await handleOpenBook(data);
+      } else {
+        // Fallback: the open-book event may have been lost due to race condition
+        // (module hadn't registered listener before did-finish-load fired)
+        // Request pending book from main process via IPC
+        console.log("[READER] No pending event, requesting from main process...");
+        const fallbackData = await window.electronAPI.getPendingBook();
+        if (fallbackData) {
+          console.log("[READER] Got pending book from main:", fallbackData.bookId);
+          await handleOpenBook(fallbackData);
+        } else {
+          console.log("[READER] No pending book found");
+        }
       }
     }
 
@@ -768,10 +776,6 @@
         e.preventDefault();
         if (e.deltaY < 0) zoomIn();
         else zoomOut();
-      } else if (readingMode === "book") {
-        // Scroll to navigate in book mode
-        if (e.deltaY > 30) goNext();
-        else if (e.deltaY < -30) goPrev();
       }
     }, { passive: false });
 

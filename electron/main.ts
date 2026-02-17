@@ -191,11 +191,22 @@ function setupIPC(): void {
     }
   });
 
+  // Store pending book data so the reader can request it after init
+  let pendingBook: { bookId: string; title: string } | null = null;
+
   ipcMain.on("navigate-reader", (_event, bookId: string, title: string) => {
+    pendingBook = { bookId, title };
     mainWindow?.loadFile(getRendererPath("reader.html"));
     mainWindow?.webContents.once("did-finish-load", () => {
       mainWindow?.webContents.send("open-book", { bookId, title });
     });
+  });
+
+  // Reader can request pending book data after its module has loaded
+  ipcMain.handle("get-pending-book", () => {
+    const data = pendingBook;
+    pendingBook = null;
+    return data;
   });
 
   // ─── PDF Local Storage ────────────────────────────────────

@@ -440,29 +440,6 @@ export default function AppleBooksLibrary({
         />
       )}
 
-      {/* Storage Info Bar */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-[#1c1c1e]/90 backdrop-blur-xl border-t border-white/10 safe-area-inset-bottom">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between text-xs text-gray-400">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <HardDrive className="w-3 h-3" />
-              {storageInfo.totalPDFs} livres ({formatSize(storageInfo.totalSize)})
-            </span>
-            <span className="hidden sm:flex items-center gap-1">
-              <Cloud className="w-3 h-3" />
-              {formatSize(storageInfo.availableSpace)} disponible
-            </span>
-          </div>
-          <a
-            href="/dashboard/bibliotheque/apps"
-            className="flex items-center gap-1 text-orange-400 hover:text-orange-300 transition"
-          >
-            Télécharger les apps
-            <ChevronRight className="w-3 h-3" />
-          </a>
-        </div>
-      </footer>
-
       {/* Context Menu */}
       {showContextMenu && selectedBook && (
         <ContextMenu

@@ -131,36 +131,6 @@ export default function OfflineLibraryClient() {
       </header>
 
       <main className="max-w-4xl mx-auto p-4 sm:p-8">
-        {/* Storage info */}
-        {storageInfo && (
-          <div className="bg-white rounded-xl p-4 mb-6 flex items-center gap-4">
-            <HardDrive className="text-[#80368D]" size={24} />
-            <div className="flex-1">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600">
-                  {storageInfo.totalPDFs} document
-                  {storageInfo.totalPDFs > 1 ? "s" : ""} téléchargé
-                  {storageInfo.totalPDFs > 1 ? "s" : ""}
-                </span>
-                <span className="text-gray-500">
-                  {formatSize(storageInfo.totalSize)} utilisé
-                </span>
-              </div>
-              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[#80368D]"
-                  style={{
-                    width: `${Math.min(100, (storageInfo.totalSize / storageInfo.availableSpace) * 100)}%`,
-                  }}
-                />
-              </div>
-              <p className="text-xs text-gray-400 mt-1">
-                {formatSize(storageInfo.availableSpace)} disponible
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Empty state */}
         {availableOffline.length === 0 ? (
           <div className="bg-white rounded-xl p-12 text-center">
