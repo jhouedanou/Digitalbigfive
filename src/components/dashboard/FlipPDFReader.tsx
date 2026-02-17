@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { PDFDocumentProxy, PDFPageProxy } from "@/types/pdfjs.d";
-import InstallPWAButton from "@/components/pwa/InstallPWAButton";
+import DownloadAppButton from "@/components/pwa/DownloadAppButton";
 
 interface FlipPDFReaderProps {
   resourceId: string;
@@ -330,8 +330,8 @@ export default function FlipPDFReader({
                 )}
               </button>
 
-              {/* Install App button - real PWA prompt */}
-              <InstallPWAButton variant="mini" />
+              {/* Download / Install App button */}
+              <DownloadAppButton variant="compact" />
             </div>
 
             {/* Zoom - desktop only */}

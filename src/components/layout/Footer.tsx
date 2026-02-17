@@ -1,4 +1,5 @@
 import Link from "next/link";
+import DownloadAppButton from "@/components/pwa/DownloadAppButton";
 
 export default function Footer() {
   return (
@@ -10,6 +11,9 @@ export default function Footer() {
             <p className="text-xs text-gray-400 mt-1">
               Ressources et produits digitaux pour le marketing
             </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <DownloadAppButton variant="compact" />
           </div>
           <div className="flex gap-6 text-sm text-gray-400">
             <Link href="/" className="hover:text-white transition-colors">

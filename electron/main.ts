@@ -104,6 +104,7 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      webSecurity: false, // Required: file:// origin needs to fetch Supabase APIs
     },
     show: false,
     backgroundColor: "#1c1c1e",
@@ -123,6 +124,12 @@ function createWindow(): void {
     mainWindow.webContents.openDevTools({ mode: "detach" });
   }
 
+  // Forward renderer console messages to terminal for debugging
+  mainWindow.webContents.on("console-message", (_event, level, message, line, sourceId) => {
+    const tag = ["LOG", "WARN", "ERROR"][level] || "LOG";
+    console.log(`[RENDERER:${tag}] ${message}`);
+  });
+
   mainWindow.on("close", (event) => {
     if (!isQuitting) {
       event.preventDefault();
@@ -134,8 +141,13 @@ function createWindow(): void {
     mainWindow = null;
   });
 
-  // Block all external navigation — we only load local files
-  mainWindow.webContents.on("will-navigate", (event) => {
+  // Block external navigation — allow only local file:// and Supabase URLs
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    const parsed = new URL(url);
+    // Allow local file navigation and Supabase auth endpoints
+    if (parsed.protocol === "file:") return;
+    if (parsed.hostname.endsWith(".supabase.co")) return;
+    log.warn(`[MAIN] Blocked navigation to: ${url}`);
     event.preventDefault();
   });
 

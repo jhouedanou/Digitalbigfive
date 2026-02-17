@@ -56,33 +56,59 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
-    let supabase = null;
+    let supabaseClient = null;
     let appConfig = null;
 
     async function init() {
-      // Get config from Electron main process
-      appConfig = await window.electronAPI.getConfig();
-
-      if (!appConfig.supabaseUrl || !appConfig.supabaseKey) {
-        showError("Configuration Supabase manquante. Vérifiez votre fichier .env.local");
-        return;
-      }
-
-      supabase = window.supabase.createClient(appConfig.supabaseUrl, appConfig.supabaseKey);
-
-      // Check if already logged in
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        // Verify the token is still valid
-        const { data: { user } } = await supabase.auth.getUser(session.access_token);
-        if (user) {
-          goToLibrary();
+      console.log("[LOGIN] init() starting...");
+      try {
+        // Check electronAPI
+        if (!window.electronAPI) {
+          showError("electronAPI non disponible. Le preload n'a pas fonctionné.");
           return;
         }
+        console.log("[LOGIN] electronAPI OK");
+
+        // Get config from Electron main process
+        appConfig = await window.electronAPI.getConfig();
+        console.log("[LOGIN] config:", { apiUrl: appConfig.apiUrl, supabaseUrl: appConfig.supabaseUrl ? "SET" : "EMPTY", supabaseKey: appConfig.supabaseKey ? "SET" : "EMPTY" });
+
+        if (!appConfig.supabaseUrl || !appConfig.supabaseKey) {
+          showError("Configuration Supabase manquante. Vérifiez votre fichier .env.local");
+          return;
+        }
+
+        // Check Supabase SDK
+        if (!window.supabase || !window.supabase.createClient) {
+          showError("Supabase SDK non chargé. Vérifiez votre connexion internet.");
+          console.error("[LOGIN] window.supabase:", window.supabase);
+          return;
+        }
+        console.log("[LOGIN] Supabase SDK loaded OK");
+
+        supabaseClient = window.supabase.createClient(appConfig.supabaseUrl, appConfig.supabaseKey);
+        console.log("[LOGIN] Supabase client created");
+
+        // Check if already logged in
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session?.access_token) {
+          console.log("[LOGIN] Existing session found, verifying...");
+          const { data: { user } } = await supabaseClient.auth.getUser(session.access_token);
+          if (user) {
+            console.log("[LOGIN] Valid session, going to library");
+            goToLibrary();
+            return;
+          }
+        }
+        console.log("[LOGIN] No existing session, showing login form");
+      } catch (err) {
+        console.error("[LOGIN] init error:", err);
+        showError("Erreur d'initialisation: " + (err.message || err));
       }
     }
 
     function showError(msg) {
+      console.error("[LOGIN] Error:", msg);
       const el = document.getElementById("error-msg");
       el.textContent = msg;
       el.classList.add("visible");
@@ -93,6 +119,7 @@
     }
 
     function goToLibrary() {
+      console.log("[LOGIN] Navigating to library...");
       window.electronAPI.navigate("library.html");
     }
 
@@ -100,6 +127,7 @@
     document.getElementById("login-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       hideError();
+      console.log("[LOGIN] Form submitted");
 
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
@@ -110,14 +138,23 @@
         return;
       }
 
+      if (!supabaseClient) {
+        showError("Client Supabase non initialisé. Rechargez l'application.");
+        console.error("[LOGIN] supabaseClient is null!");
+        return;
+      }
+
       btn.textContent = "Connexion en cours...";
       btn.disabled = true;
+      console.log("[LOGIN] Calling signInWithPassword for:", email);
 
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
           email,
           password,
         });
+
+        console.log("[LOGIN] signIn result:", { hasData: !!data, hasSession: !!data?.session, error: error?.message });
 
         if (error) {
           showError(error.message === "Invalid login credentials"
@@ -130,10 +167,16 @@
         }
 
         if (data.session) {
+          console.log("[LOGIN] Login successful! Navigating to library...");
           goToLibrary();
+        } else {
+          showError("Connexion réussie mais pas de session. Réessayez.");
+          btn.textContent = "Se connecter";
+          btn.disabled = false;
         }
       } catch (err) {
-        showError("Impossible de se connecter. Vérifiez votre connexion internet.");
+        console.error("[LOGIN] Login error:", err);
+        showError("Impossible de se connecter: " + (err.message || "Vérifiez votre connexion internet."));
         btn.textContent = "Se connecter";
         btn.disabled = false;
       }

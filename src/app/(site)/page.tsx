@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import ResourceCard from "@/components/resources/ResourceCard";
 import FilterBar from "@/components/resources/FilterBar";
+import DownloadAppButton from "@/components/pwa/DownloadAppButton";
 
 interface PageProps {
   searchParams: Promise<{
@@ -40,6 +41,11 @@ export default async function LibraryPage({ searchParams }: PageProps) {
           Découvrez nos ressources gratuites pour booster votre marketing et nos
           produits premium pour passer au niveau supérieur.
         </p>
+      </div>
+
+      {/* Download App Section */}
+      <div className="mb-10">
+        <DownloadAppButton variant="full" />
       </div>
 
       {/* Filters */}
