@@ -1,7 +1,7 @@
 {
   "name": "digitalbigfive",
   "version": "1.0.0",
-  "description": "",
+  "description": "Big Five Digital - Ressources et produits digitaux premium",
   "main": "electron/dist/main.js",
   "scripts": {
     "dev": "next dev",
@@ -15,15 +15,15 @@
     "postinstall": "prisma generate",
     "electron:compile": "tsc -p electron/tsconfig.json",
     "electron:dev": "npm run electron:compile && concurrently \"npm run dev\" \"electron .\" --kill-others",
-    "electron:build:win": "npm run electron:compile && electron-builder --win",
-    "electron:build:mac": "npm run electron:compile && electron-builder --mac",
-    "electron:build:linux": "npm run electron:compile && electron-builder --linux",
-    "electron:build:all": "npm run electron:compile && electron-builder --win --mac --linux",
+    "electron:build:win": "powershell -ExecutionPolicy Bypass -File build-electron.ps1 win",
+    "electron:build:mac": "powershell -ExecutionPolicy Bypass -File build-electron.ps1 mac",
+    "electron:build:linux": "powershell -ExecutionPolicy Bypass -File build-electron.ps1 linux",
+    "electron:build:all": "powershell -ExecutionPolicy Bypass -File build-electron.ps1 all",
     "electron:icons": "tsx scripts/generate-electron-icons.ts"
   },
   "repository": {
     "type": "git",
-    "url": "http://local_proxy@127.0.0.1:33711/git/jhouedanou/Digitalbigfive"
+    "url": "https://github.com/jhouedanou/Digitalbigfive"
   },
   "keywords": [],
   "author": "",

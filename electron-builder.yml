@@ -38,7 +38,7 @@ mac:
     - target: dmg
       arch:
         - universal
-  icon: electron/assets/icon.icns
+  icon: electron/assets/icon.png
   category: public.app-category.education
   entitlements: electron/entitlements.mac.plist
   entitlementsInherit: electron/entitlements.mac.plist
@@ -64,8 +64,7 @@ linux:
         - x64
   icon: electron/assets/icon.png
   category: Education
-  desktop:
-    StartupWMClass: big-five-digital
+  executableName: big-five-digital
 
 protocols:
   - name: Big Five Digital

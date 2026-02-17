@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import DirectDownloadButton from "@/components/resources/DirectDownloadButton";
-import ProductRecommendations, { getRecommendedProducts } from "@/components/upsell/ProductRecommendations";
+import ProductRecommendations from "@/components/upsell/ProductRecommendations";
+import { getRecommendedProducts } from "@/lib/recommendations";
 import { FileText, Clock, BarChart3, Calendar, CheckCircle } from "lucide-react";
 
 interface PageProps {

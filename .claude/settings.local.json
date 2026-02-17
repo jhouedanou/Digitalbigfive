@@ -26,7 +26,11 @@
       "Bash(git log:*)",
       "Bash(ls:*)",
       "Bash(^d \")",
-      "Bash(git ls-tree:*)"
+      "Bash(git ls-tree:*)",
+      "Bash(npm run electron:compile:*)",
+      "Bash(npx electron-builder:*)",
+      "Bash(set:*)",
+      "Bash(tasklist:*)"
     ]
   }
 }

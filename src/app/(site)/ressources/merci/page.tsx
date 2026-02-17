@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CheckCircle, Mail, Clock, ArrowRight, Sparkles } from "lucide-react";
-import ProductRecommendations, { getRecommendedProducts } from "@/components/upsell/ProductRecommendations";
+import ProductRecommendations from "@/components/upsell/ProductRecommendations";
+import { getRecommendedProducts } from "@/lib/recommendations";
 
 interface PageProps {
   searchParams: Promise<{

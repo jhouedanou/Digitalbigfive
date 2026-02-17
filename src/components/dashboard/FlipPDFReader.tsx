@@ -12,6 +12,7 @@ import {
   ZoomIn,
   ZoomOut,
   BookOpen,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import type { PDFDocumentProxy, PDFPageProxy } from "@/types/pdfjs.d";
@@ -44,6 +45,33 @@ export default function FlipPDFReader({
   const [flipDirection, setFlipDirection] = useState<"left" | "right" | null>(null);
   const [pageImages, setPageImages] = useState<Map<number, string>>(new Map());
   const [isMobile, setIsMobile] = useState(false);
+  const [readingMode, setReadingMode] = useState<"book" | "classic">("book");
+
+  // Derived: use classic single-page mode?
+  const useClassicMode = isMobile || readingMode === "classic";
+
+  // Load reading mode preference from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("pdf-reading-mode");
+    if (saved === "book" || saved === "classic") {
+      setReadingMode(saved);
+    }
+  }, []);
+
+  // Toggle between book and classic mode (desktop only)
+  const toggleReadingMode = useCallback(() => {
+    const newMode = readingMode === "book" ? "classic" : "book";
+    setReadingMode(newMode);
+    localStorage.setItem("pdf-reading-mode", newMode);
+
+    if (newMode === "classic") {
+      // Switching to classic: sync currentPage from spread position
+      setCurrentPage(currentSpread * 2 + 1);
+    } else {
+      // Switching to book: sync spread from currentPage
+      setCurrentSpread(Math.floor((currentPage - 1) / 2));
+    }
+  }, [readingMode, currentSpread, currentPage]);
 
   // Detect mobile
   useEffect(() => {
@@ -188,16 +216,16 @@ export default function FlipPDFReader({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === " ") {
         e.preventDefault();
-        isMobile ? nextPage() : nextSpread();
+        useClassicMode ? nextPage() : nextSpread();
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
-        isMobile ? prevPage() : prevSpread();
+        useClassicMode ? prevPage() : prevSpread();
       }
     };
     
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [nextSpread, prevSpread, nextPage, prevPage, isMobile]);
+  }, [nextSpread, prevSpread, nextPage, prevPage, useClassicMode]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -232,11 +260,11 @@ export default function FlipPDFReader({
   }, []);
 
   // Current page info for display
-  const displayPageInfo = isMobile
+  const displayPageInfo = useClassicMode
     ? `Page ${currentPage} sur ${totalPages}`
     : `Page ${leftPage}${rightPage <= totalPages ? `-${rightPage}` : ""} sur ${totalPages}`;
 
-  const progressPercent = isMobile
+  const progressPercent = useClassicMode
     ? (currentPage / totalPages) * 100
     : (leftPage / totalPages) * 100;
 
@@ -276,14 +304,35 @@ export default function FlipPDFReader({
               <h1 className="text-white font-medium text-sm line-clamp-1">{title}</h1>
               <div className="flex items-center gap-2 text-xs text-gray-400">
                 <BookOpen className="w-3 h-3 text-[#80368D] flex-shrink-0" />
-                <span className="truncate">{isMobile ? "Lecture" : "Mode livre"} • {displayPageInfo}</span>
+                <span className="truncate">{useClassicMode ? "Mode classique" : "Mode livre"} • {displayPageInfo}</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {/* Install App button - real PWA prompt */}
-            <InstallPWAButton variant="mini" />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Toggle reading mode + Install app - grouped */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleReadingMode}
+                className="flex items-center gap-1.5 px-3 py-2 bg-[#80368D]/80 hover:bg-[#80368D] rounded-lg transition text-white text-xs font-medium border border-white/20"
+                title={readingMode === "book" ? "Passer en mode classique" : "Passer en mode livre"}
+              >
+                {readingMode === "book" ? (
+                  <>
+                    <FileText className="w-4 h-4" />
+                    <span>Classique</span>
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="w-4 h-4" />
+                    <span>Livre</span>
+                  </>
+                )}
+              </button>
+
+              {/* Install App button - real PWA prompt */}
+              <InstallPWAButton variant="mini" />
+            </div>
 
             {/* Zoom - desktop only */}
             {!isMobile && (
@@ -331,9 +380,12 @@ export default function FlipPDFReader({
             </div>
             <p className="text-gray-400">Préparation du livre...</p>
           </div>
-        ) : isMobile ? (
-          /* ═══ MOBILE: Classic single-page mode ═══ */
-          <div className="relative w-full h-full flex items-center justify-center">
+        ) : useClassicMode ? (
+          /* ═══ Classic single-page mode (mobile + desktop classic) ═══ */
+          <div 
+            className="relative w-full h-full flex items-center justify-center"
+            style={!isMobile ? { transform: `scale(${scale})`, transformOrigin: "center center" } : undefined}
+          >
             {/* Page image */}
             <div className="relative bg-white rounded-lg shadow-2xl overflow-hidden" style={{ maxWidth: "100%", maxHeight: "calc(100vh - 140px)" }}>
               {pageImages.get(currentPage) ? (
@@ -501,7 +553,7 @@ export default function FlipPDFReader({
               />
             </div>
             <span className="text-xs text-gray-400 min-w-[50px] text-right">
-              {isMobile 
+              {useClassicMode 
                 ? `${currentPage} / ${totalPages}`
                 : `${leftPage}-${Math.min(rightPage, totalPages)} / ${totalPages}`
               }
@@ -509,7 +561,7 @@ export default function FlipPDFReader({
           </div>
 
           {/* Quick navigation dots */}
-          {!isMobile && (
+          {!useClassicMode && (
             <div className="flex items-center justify-center gap-1 overflow-x-auto py-1">
               {Array.from({ length: totalSpreads }, (_, i) => (
                 <button
