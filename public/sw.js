@@ -4,7 +4,7 @@
  */
 
 const CACHE_NAME = "bigfive-reader-v1";
-const STATIC_CACHE = "bigfive-static-v2";
+const STATIC_CACHE = "bigfive-static-v3"; // bumped: force cache refresh on deploy
 const PDF_CACHE = "bigfive-pdfs-v1";
 
 // Resources to cache on install - only essential files that definitely exist
@@ -257,18 +257,12 @@ async function handleAPIRequest(request) {
   }
 }
 
-// Handle static requests - cache first
+// Handle static requests - network first (ensures code changes are always visible)
 async function handleStaticRequest(request) {
-  const cachedResponse = await caches.match(request);
-
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-
   try {
     const response = await fetch(request);
 
-    // Cache successful responses
+    // Update cache with fresh response
     if (response.ok && request.method === "GET") {
       const cache = await caches.open(STATIC_CACHE);
       cache.put(request, response.clone());
@@ -276,7 +270,13 @@ async function handleStaticRequest(request) {
 
     return response;
   } catch (error) {
-    console.log("[SW] Static request failed:", request.url);
+    console.log("[SW] Network failed, falling back to cache:", request.url);
+
+    // Use cache only as offline fallback
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
 
     // Return offline page for navigation requests
     if (request.mode === "navigate") {

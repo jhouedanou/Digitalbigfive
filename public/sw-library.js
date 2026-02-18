@@ -1,7 +1,7 @@
 // Service Worker for Library PWA
 // Enables offline reading of PDFs
 
-const CACHE_NAME = 'library-cache-v1';
+const CACHE_NAME = 'library-cache-v2'; // bumped: force cache refresh on deploy
 const OFFLINE_URL = '/library/offline.html';
 
 // Files to cache for offline use
@@ -71,7 +71,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For static assets and scripts
+  // For static assets and scripts - network first (ensures code changes are always visible)
   if (
     request.destination === 'script' ||
     request.destination === 'style' ||
@@ -79,25 +79,19 @@ self.addEventListener('fetch', (event) => {
     url.pathname.includes('pdf.js')
   ) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) {
-          // Return cached and update in background
-          fetch(request).then((response) => {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, response);
-            });
-          });
-          return cached;
-        }
-
-        return fetch(request).then((response) => {
+      fetch(request)
+        .then((response) => {
+          // Update cache with fresh response
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(request, responseClone);
           });
           return response;
-        });
-      })
+        })
+        .catch(() => {
+          // Use cache only as offline fallback
+          return caches.match(request);
+        })
     );
     return;
   }
