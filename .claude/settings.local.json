@@ -31,7 +31,11 @@
       "Bash(npx electron-builder:*)",
       "Bash(set:*)",
       "Bash(tasklist:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(find:*)",
+      "Bash(git -C \"C:\\\\Users\\\\socialmedia\\\\Documents\\\\GitHub\\\\Digitalbigfive\" log --all --oneline --grep=\"phone\\\\|téléphone\" --ignore-case)",
+      "Bash(git -C \"C:\\\\Users\\\\socialmedia\\\\Documents\\\\GitHub\\\\Digitalbigfive\" log --oneline -10)",
+      "Bash(del \"C:\\\\Users\\\\socialmedia\\\\Documents\\\\GitHub\\\\Digitalbigfive\\\\src\\\\components\\\\resources\\\\DownloadForm.tsx\")"
     ]
   }
 }

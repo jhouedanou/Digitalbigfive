@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, User, LogOut } from "lucide-react";
+import { Menu, X, User, LogOut, UserRoundPlus } from "lucide-react";
 import { useAuth } from "@/components/providers/SessionProvider";
 
 export default function Header() {
@@ -21,7 +21,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-xl font-black text-[#80368D]">Big Five</span>
-            <span className="text-xs bg-[#D0E4F2] text-[#29358B] px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-[#D0E4F2] text-[#80368D]] px-2 py-0.5 rounded-full font-medium">
               Ressources
             </span>
           </Link>
@@ -79,13 +79,21 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <User size={16} />
-                Espace client
-              </Link>
+              <>
+                <Link
+                  href="/login"
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <User size={16} />
+                  Se connecter
+                </Link>
+              
+                <Link href="/inscription" className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                  {/* icone lucide pour ouvrir un compte  */}
+                  <UserRoundPlus size={16} />
+                  S'inscrire
+                </Link>
+              </>
             )}
           </nav>
 
@@ -131,13 +139,22 @@ export default function Header() {
                   </button>
                 </div>
               ) : (
-                <Link
-                  href="/login"
-                  className="block py-2 text-sm text-gray-600 hover:text-gray-900"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Espace client
-                </Link>
+                <>
+                  <Link
+                    href="/login"
+                    className="block py-2 text-sm text-gray-600 hover:text-gray-900"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Se connecter
+                  </Link>
+                  <Link
+                    href="/inscription"
+                    className="block py-2 text-sm text-gray-600 hover:text-gray-900"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    S'inscrire
+                  </Link>
+                </>
               )
             )}
           </div>

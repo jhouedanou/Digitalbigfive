@@ -18,7 +18,7 @@ export default function DashboardNav({ user }: DashboardNavProps) {
   const links = [
     { href: "/dashboard", label: "Accueil", icon: LayoutDashboard },
     { href: "/dashboard/produits", label: "Mes produits", icon: BookOpen },
-    { href: "/dashboard/bibliotheque", label: "Bibliothèque", icon: Library },
+   /*  { href: "/dashboard/bibliotheque", label: "Bibliothèque", icon: Library }, */
     { href: "/dashboard/historique", label: "Historique", icon: Receipt },
     { href: "/dashboard/avis", label: "Mes avis", icon: Star },
     { href: "/dashboard/profil", label: "Profil", icon: User },
