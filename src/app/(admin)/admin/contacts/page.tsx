@@ -8,6 +8,7 @@ interface Contact {
   firstName: string;
   lastName: string;
   email: string;
+  phone: string | null;
   organization: string | null;
   jobTitle: string | null;
   createdAt: string;
@@ -50,6 +51,9 @@ export default function AdminContactsPage() {
                 Email
               </th>
               <th className="text-left px-6 py-3 font-medium text-gray-500">
+                Téléphone
+              </th>
+              <th className="text-left px-6 py-3 font-medium text-gray-500">
                 Organisation
               </th>
               <th className="text-left px-6 py-3 font-medium text-gray-500">
@@ -70,6 +74,9 @@ export default function AdminContactsPage() {
                   {c.firstName} {c.lastName}
                 </td>
                 <td className="px-6 py-4 text-gray-600">{c.email}</td>
+                <td className="px-6 py-4 text-gray-600">
+                  {c.phone || "-"}
+                </td>
                 <td className="px-6 py-4 text-gray-600">
                   {c.organization || "-"}
                 </td>

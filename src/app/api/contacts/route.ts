@@ -9,6 +9,7 @@ export async function GET() {
   }
 
   const contacts = await prisma.contact.findMany({
+    where: { NOT: { email: { contains: "@download.local" } } },
     orderBy: { createdAt: "desc" },
     include: {
       downloads: {

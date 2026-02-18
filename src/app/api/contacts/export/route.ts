@@ -9,6 +9,7 @@ export async function GET() {
   }
 
   const contacts = await prisma.contact.findMany({
+    where: { NOT: { email: { contains: "@download.local" } } },
     orderBy: { createdAt: "desc" },
     include: {
       downloads: {
@@ -18,11 +19,12 @@ export async function GET() {
   });
 
   // Generate CSV
-  const headers = ["Prénom", "Nom", "Email", "Organisation", "Fonction", "Date", "Ressources"];
+  const headers = ["Prénom", "Nom", "Email", "Téléphone", "Organisation", "Fonction", "Date", "Ressources"];
   const rows = contacts.map((c) => [
     c.firstName,
     c.lastName,
     c.email,
+    c.phone || "",
     c.organization || "",
     c.jobTitle || "",
     c.createdAt.toISOString().split("T")[0],

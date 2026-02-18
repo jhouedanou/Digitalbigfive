@@ -55,6 +55,7 @@ export default function RegisterPage() {
           lastName,
           email,
           password,
+          phone: formData.get("phone"),
           organization: formData.get("organization"),
           jobTitle: formData.get("jobTitle"),
         }),
@@ -115,6 +116,18 @@ export default function RegisterPage() {
             type="email"
             required
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Téléphone <span className="text-gray-400 font-normal">(facultatif)</span>
+          </label>
+          <input
+            name="phone"
+            type="tel"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
+            placeholder="+221 77 000 00 00"
           />
         </div>
 

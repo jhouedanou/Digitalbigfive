@@ -110,7 +110,7 @@ export default async function FreeResourcePage({ params }: PageProps) {
                   Ressource gratuite
                 </h2>
                 <p className="text-sm text-gray-500">
-                  Téléchargez immédiatement sans inscription
+                  Remplissez le formulaire pour télécharger
                 </p>
               </div>
 
@@ -132,7 +132,7 @@ export default async function FreeResourcePage({ params }: PageProps) {
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                  <span>Aucune inscription requise</span>
+                  <span>Accès rapide et gratuit</span>
                 </div>
               </div>
 

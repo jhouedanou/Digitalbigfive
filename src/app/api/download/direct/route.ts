@@ -4,7 +4,7 @@ import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
-    const { resourceId } = await request.json();
+    const { resourceId, firstName, lastName, email, phone, gdprConsent } = await request.json();
 
     if (!resourceId) {
       return NextResponse.json(
@@ -13,13 +13,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!firstName || !lastName || !email) {
+      return NextResponse.json(
+        { error: "Prénom, nom et email sont obligatoires" },
+        { status: 400 }
+      );
+    }
+
+    if (!gdprConsent) {
+      return NextResponse.json(
+        { error: "Le consentement RGPD est obligatoire" },
+        { status: 400 }
+      );
+    }
+
     // Vérifier que la ressource existe et est gratuite
     const resource = await prisma.resource.findUnique({
       where: { id: resourceId },
-      select: { 
-        id: true, 
-        type: true, 
-        status: true, 
+      select: {
+        id: true,
+        type: true,
+        status: true,
         filePath: true,
         title: true,
       },
@@ -50,13 +64,20 @@ export async function POST(request: NextRequest) {
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 heure
 
-    // Créer un contact anonyme pour le tracking
-    const contact = await prisma.contact.create({
-      data: {
-        firstName: "Visiteur",
-        lastName: "Anonyme",
-        email: `anonymous_${Date.now()}@download.local`,
+    // Upsert contact par email (créer si nouveau, mettre à jour si existant)
+    const contact = await prisma.contact.upsert({
+      where: { email },
+      create: {
+        firstName,
+        lastName,
+        email,
+        phone: phone || null,
         gdprConsent: true,
+      },
+      update: {
+        firstName,
+        lastName,
+        phone: phone || undefined, // ne met à jour que si fourni
       },
     });
 
@@ -71,7 +92,7 @@ export async function POST(request: NextRequest) {
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalbigfive.vercel.app";
-    
+
     return NextResponse.json({
       downloadUrl: `${appUrl}/api/download/${token}`,
       expiresAt: expiresAt.toISOString(),

@@ -16,6 +16,7 @@ model User {
   lastName      String
   organization  String?
   jobTitle      String?
+  phone         String?
   profileImage  String?
   role          String        @default("client")
   emailVerified DateTime?
@@ -108,9 +109,10 @@ model Contact {
   id           String     @id @default(cuid())
   firstName    String
   lastName     String
-  email        String
+  email        String     @unique
   organization String?
   jobTitle     String?
+  phone        String?
   gdprConsent  Boolean    @default(false)
   createdAt    DateTime   @default(now())
   downloads    Download[]
