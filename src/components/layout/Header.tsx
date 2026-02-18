@@ -11,7 +11,6 @@ export default function Header() {
 
   const links = [
     { href: "/", label: "Ressources" },
-    { href: "/login", label: "Espace client" },
   ];
 
   return (
@@ -39,6 +38,26 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/login"
+              className={`text-sm font-medium transition-colors ${
+                pathname === "/login"
+                  ? "text-blue-600"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Se connecter
+            </Link>
+            <Link
+              href="/inscription"
+              className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${
+                pathname === "/inscription"
+                  ? "bg-blue-700 text-white"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
+            >
+              Créer un compte
+            </Link>
           </nav>
 
           <button
@@ -61,6 +80,28 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/login"
+              className={`block py-2 text-sm ${
+                pathname === "/login"
+                  ? "text-blue-600 font-medium"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+              onClick={() => setMobileOpen(false)}
+            >
+              Se connecter
+            </Link>
+            <Link
+              href="/inscription"
+              className={`block py-2 text-sm font-medium ${
+                pathname === "/inscription"
+                  ? "text-blue-700"
+                  : "text-blue-600 hover:text-blue-700"
+              }`}
+              onClick={() => setMobileOpen(false)}
+            >
+              Créer un compte
+            </Link>
           </div>
         )}
       </div>
