@@ -2,6 +2,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap");
 
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* =========================
    BIG FIVE — Design tokens
@@ -329,5 +330,163 @@ p {
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+}
+
+/* =========================
+   PROSE / Rich Text Content
+   Styles pour le rendu HTML
+   des descriptions (listes,
+   indentation, sauts de ligne)
+   ========================= */
+
+/* Styles de base pour le contenu riche */
+.prose p {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+  line-height: 1.7;
+}
+
+.prose p:first-child {
+  margin-top: 0;
+}
+
+/* Listes à puces */
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.625em;
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+
+.prose ul ul {
+  list-style-type: circle;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.prose ul ul ul {
+  list-style-type: square;
+}
+
+/* Listes numérotées */
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 1.625em;
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+
+.prose ol ol {
+  list-style-type: lower-alpha;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+/* Éléments de liste */
+.prose li {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  line-height: 1.6;
+}
+
+.prose li > p {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+/* Titres */
+.prose h2 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  line-height: 1.3;
+  color: var(--bf-black);
+}
+
+.prose h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+  line-height: 1.4;
+  color: var(--bf-black);
+}
+
+.prose h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  line-height: 1.5;
+}
+
+/* Liens */
+.prose a {
+  color: var(--bf-violet);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose a:hover {
+  color: #6a2d76;
+}
+
+/* Citations */
+.prose blockquote {
+  border-left: 4px solid var(--bf-violet);
+  padding-left: 1em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  font-style: italic;
+  color: #4b5563;
+}
+
+/* Texte barré, souligné, etc. */
+.prose strong {
+  font-weight: 700;
+}
+
+.prose em {
+  font-style: italic;
+}
+
+/* Séparateur horizontal */
+.prose hr {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+/* Sauts de ligne (br) dans le contenu riche */
+.prose br {
+  display: block;
+  content: "";
+  margin-top: 0.5em;
+}
+
+/* Code inline */
+.prose code {
+  background: #f3f4f6;
+  padding: 0.15em 0.35em;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+/* Bloc de code */
+.prose pre {
+  background: #1f2937;
+  color: #e5e7eb;
+  padding: 1em;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.prose pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.875em;
 }
 
