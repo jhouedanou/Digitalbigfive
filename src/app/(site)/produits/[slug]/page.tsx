@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { formatPrice, formatDate } from "@/lib/utils";
 import BuyButton from "@/components/products/BuyButton";
@@ -16,6 +17,68 @@ import Link from "next/link";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const resource = await prisma.resource.findUnique({
+    where: { slug, type: "paid", status: "published" },
+    select: {
+      title: true,
+      shortDescription: true,
+      coverImage: true,
+      price: true,
+      originalPrice: true,
+      currency: true,
+      category: true,
+    },
+  });
+
+  if (!resource) {
+    return { title: "Produit introuvable" };
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalbigfive.vercel.app";
+  const priceText = resource.price
+    ? `${resource.price.toLocaleString("fr-FR")} ${resource.currency}`
+    : "";
+  const description = resource.shortDescription || `Découvrez ${resource.title} sur Digital Big Five.`;
+
+  return {
+    title: `${resource.title} | Digital Big Five`,
+    description,
+    openGraph: {
+      title: resource.title,
+      description: priceText ? `${priceText} — ${description}` : description,
+      url: `${appUrl}/produits/${slug}`,
+      siteName: "Digital Big Five",
+      images: resource.coverImage
+        ? [
+            {
+              url: resource.coverImage,
+              width: 1200,
+              height: 630,
+              alt: resource.title,
+            },
+          ]
+        : [],
+      locale: "fr_FR",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: resource.title,
+      description: priceText ? `${priceText} — ${description}` : description,
+      images: resource.coverImage ? [resource.coverImage] : [],
+    },
+    other: {
+      "product:price:amount": resource.price?.toString() || "",
+      "product:price:currency": resource.currency,
+      ...(resource.originalPrice && resource.originalPrice > (resource.price || 0)
+        ? { "product:original_price:amount": resource.originalPrice.toString() }
+        : {}),
+    },
+  };
 }
 
 export default async function ProductPage({ params }: PageProps) {

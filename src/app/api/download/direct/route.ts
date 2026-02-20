@@ -6,7 +6,7 @@ import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
-    const { resourceId, firstName, lastName, email, phone, gdprConsent } = await request.json();
+    const { resourceId, firstName, lastName, email, phone, organization, gdprConsent } = await request.json();
 
     if (!resourceId) {
       return NextResponse.json(
@@ -74,12 +74,14 @@ export async function POST(request: NextRequest) {
         lastName,
         email,
         phone: phone || null,
+        organization: organization || null,
         gdprConsent: true,
       },
       update: {
         firstName,
         lastName,
         phone: phone || undefined, // ne met à jour que si fourni
+        organization: organization || undefined,
       },
     });
 

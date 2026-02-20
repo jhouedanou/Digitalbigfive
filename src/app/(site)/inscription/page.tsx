@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
+import PhoneInputWithCode from "@/components/shared/PhoneInputWithCode";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -119,17 +120,7 @@ export default function RegisterPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Téléphone <span className="text-gray-400 font-normal">(facultatif)</span>
-          </label>
-          <input
-            name="phone"
-            type="tel"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
-            placeholder="+221 77 000 00 00"
-          />
-        </div>
+        <PhoneInputWithCode name="phone" />
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">

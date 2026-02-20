@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import PhoneInputWithCode from "@/components/shared/PhoneInputWithCode";
 
 interface DirectDownloadButtonProps {
   resourceId: string;
@@ -31,6 +32,7 @@ export default function DirectDownloadButton({
     const lastName = formData.get("lastName") as string;
     const email = formData.get("email") as string;
     const phone = formData.get("phone") as string;
+    const organization = formData.get("organization") as string;
     const gdprConsent = formData.get("gdprConsent") === "on";
 
     try {
@@ -43,6 +45,7 @@ export default function DirectDownloadButton({
           lastName,
           email,
           phone,
+          organization,
           gdprConsent,
         }),
       });
@@ -109,6 +112,7 @@ export default function DirectDownloadButton({
             <button
               onClick={() => setShowModal(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              aria-label="Fermer"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -163,24 +167,26 @@ export default function DirectDownloadButton({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Téléphone <span className="text-gray-400 font-normal">(facultatif)</span>
+                  Organisation <span className="text-gray-400 font-normal">(facultatif)</span>
                 </label>
                 <input
-                  name="phone"
-                  type="tel"
+                  name="organization"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
-                  placeholder="+221 77 000 00 00"
+                  placeholder="Votre entreprise ou organisation"
                 />
               </div>
 
+              <PhoneInputWithCode name="phone" />
+
               <div className="flex items-start gap-2">
                 <input
+                  id="gdprConsent"
                   name="gdprConsent"
                   type="checkbox"
                   required
                   className="mt-1 accent-[#80368D]"
                 />
-                <label className="text-xs text-gray-500">
+                <label htmlFor="gdprConsent" className="text-xs text-gray-500">
                   J&apos;accepte que mes données soient utilisées pour recevoir cette ressource et des communications de Digital Big Five. *
                 </label>
               </div>
