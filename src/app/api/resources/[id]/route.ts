@@ -69,7 +69,33 @@ export async function PUT(
       data: updateData,
     });
 
-    return NextResponse.json(resource);
+    // Handle FAQs if provided
+    if (body.faqs !== undefined && Array.isArray(body.faqs)) {
+      // Delete existing FAQs
+      await prisma.fAQ.deleteMany({ where: { resourceId: id } });
+
+      // Create new FAQs
+      if (body.faqs.length > 0) {
+        await prisma.fAQ.createMany({
+          data: body.faqs.map(
+            (faq: { question: string; answer: string; sortOrder?: number }, index: number) => ({
+              resourceId: id,
+              question: faq.question,
+              answer: faq.answer,
+              sortOrder: faq.sortOrder ?? index,
+            })
+          ),
+        });
+      }
+    }
+
+    // Return resource with FAQs
+    const updated = await prisma.resource.findUnique({
+      where: { id },
+      include: { faqs: { orderBy: { sortOrder: "asc" } } },
+    });
+
+    return NextResponse.json(updated);
   } catch (error) {
     console.error("Resource update error:", error);
     return NextResponse.json(

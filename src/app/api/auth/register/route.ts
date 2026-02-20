@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sendWelcomeEmail } from "@/lib/email";
@@ -44,10 +44,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Envoi email de bienvenue (sans bloquer la réponse)
-    sendWelcomeEmail({ to: email, firstName }).catch((err) =>
-      console.error("[Email] Échec envoi bienvenue:", err)
-    );
+    // Envoi email de bienvenue via after() pour garantir l'envoi sur Vercel
+    after(async () => {
+      try {
+        await sendWelcomeEmail({ to: email, firstName });
+        console.log("[Register] ✅ Email bienvenue envoyé à", email);
+      } catch (err: any) {
+        console.error("[Register] ❌ Échec envoi bienvenue:", err?.message || err);
+      }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

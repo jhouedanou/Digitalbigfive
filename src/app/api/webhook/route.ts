@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyIpnSignature, verifyIpnSha256 } from "@/lib/paytech";
-import { sendOrderConfirmation, sendAdminNewOrderNotification } from "@/lib/email";
+import { sendOrderConfirmation, sendAdminNewOrderNotification, sendProductAccessEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,26 +68,53 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // Email confirmation client
-        sendOrderConfirmation({
-          to: updatedOrder.user.email,
-          firstName: updatedOrder.user.firstName,
-          resourceTitle: updatedOrder.resource.title,
-          amount: updatedOrder.amount,
-          currency: updatedOrder.currency,
-          orderId: updatedOrder.id,
-          dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/produits`,
-        }).catch((err) => console.error("[Email] Échec confirmation achat:", err));
+        // Utiliser after() pour que les emails soient envoyés APRÈS la réponse HTTP
+        // sans être tués par l'arrêt de la fonction serverless Vercel
+        after(async () => {
+          try {
+            // Email confirmation client
+            await sendOrderConfirmation({
+              to: updatedOrder.user.email,
+              firstName: updatedOrder.user.firstName,
+              resourceTitle: updatedOrder.resource.title,
+              amount: updatedOrder.amount,
+              currency: updatedOrder.currency,
+              orderId: updatedOrder.id,
+              dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/produits`,
+            });
+            console.log("[Webhook] ✅ Email confirmation achat envoyé à", updatedOrder.user.email);
+          } catch (err: any) {
+            console.error("[Webhook] ❌ Échec confirmation achat:", err?.message || err);
+          }
 
-        // Notification admin
-        sendAdminNewOrderNotification({
-          customerName: `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`,
-          customerEmail: updatedOrder.user.email,
-          resourceTitle: updatedOrder.resource.title,
-          amount: updatedOrder.amount,
-          currency: updatedOrder.currency,
-          orderId: updatedOrder.id,
-        }).catch((err) => console.error("[Email] Échec notif admin:", err));
+          try {
+            // Email accès produit
+            await sendProductAccessEmail({
+              to: updatedOrder.user.email,
+              firstName: updatedOrder.user.firstName,
+              resourceTitle: updatedOrder.resource.title,
+              dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/produits`,
+            });
+            console.log("[Webhook] ✅ Email accès produit envoyé à", updatedOrder.user.email);
+          } catch (err: any) {
+            console.error("[Webhook] ❌ Échec accès produit:", err?.message || err);
+          }
+
+          try {
+            // Notification admin
+            await sendAdminNewOrderNotification({
+              customerName: `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`,
+              customerEmail: updatedOrder.user.email,
+              resourceTitle: updatedOrder.resource.title,
+              amount: updatedOrder.amount,
+              currency: updatedOrder.currency,
+              orderId: updatedOrder.id,
+            });
+            console.log("[Webhook] ✅ Notification admin envoyée");
+          } catch (err: any) {
+            console.error("[Webhook] ❌ Échec notif admin:", err?.message || err);
+          }
+        });
 
         break;
       }

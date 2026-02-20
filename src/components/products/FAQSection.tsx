@@ -39,9 +39,10 @@ export default function FAQSection({ faqs }: { faqs: FAQ[] }) {
           <div
             className={`accordion-content ${openIndex === index ? "open" : ""}`}
           >
-            <div className="px-4 pb-4 text-gray-600 text-sm">
-              {faq.answer}
-            </div>
+            <div
+              className="px-4 pb-4 text-gray-600 text-sm prose prose-sm max-w-none [&_a]:text-[#80368D] [&_a]:underline"
+              dangerouslySetInnerHTML={{ __html: faq.answer }}
+            />
           </div>
         </div>
       ))}

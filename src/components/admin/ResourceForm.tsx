@@ -2,6 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import FAQEditor, { type FAQItem } from "./FAQEditor";
+
+const RichTextEditor = dynamic(() => import("./RichTextEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="border border-gray-300 rounded-lg p-4 text-sm text-gray-400 animate-pulse">
+      Chargement de l&apos;éditeur...
+    </div>
+  ),
+});
 
 interface ResourceData {
   id?: string;
@@ -25,6 +36,7 @@ interface ResourceData {
   sku: string;
   allowDownload: boolean;
   enableWatermark: boolean;
+  faqs?: FAQItem[];
 }
 
 const EMPTY: ResourceData = {
@@ -76,6 +88,9 @@ export default function ResourceForm({
 }) {
   const router = useRouter();
   const [data, setData] = useState<ResourceData>(initialData || EMPTY);
+  const [faqs, setFaqs] = useState<FAQItem[]>(
+    initialData?.faqs || []
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -164,7 +179,7 @@ export default function ResourceForm({
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, faqs }),
       });
 
       if (!res.ok) {
@@ -242,15 +257,16 @@ export default function ResourceForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description longue (HTML) *
+            Description longue *
           </label>
-          <textarea
-            value={data.longDescription}
-            onChange={(e) => update("longDescription", e.target.value)}
-            required
-            rows={8}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
+          <RichTextEditor
+            content={data.longDescription}
+            onChange={(html) => update("longDescription", html)}
+            placeholder="Rédigez la description détaillée de la ressource..."
           />
+          <p className="text-xs text-gray-400 mt-1">
+            Utilisez la barre d&apos;outils pour formater le texte (gras, listes, liens, etc.)
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -529,6 +545,20 @@ export default function ResourceForm({
           </div>
         </div>
       )}
+
+      {/* FAQ */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">FAQ de la ressource</h2>
+          <span className="text-xs text-gray-400">
+            {faqs.length} question{faqs.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+        <p className="text-sm text-gray-500">
+          Ajoutez des questions fréquentes pour aider les utilisateurs à comprendre cette ressource.
+        </p>
+        <FAQEditor faqs={faqs} onChange={setFaqs} />
+      </div>
 
       {/* Status & Submit */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import DirectDownloadButton from "@/components/resources/DirectDownloadButton";
 import ProductRecommendations from "@/components/upsell/ProductRecommendations";
+import FAQSection from "@/components/products/FAQSection";
 import { FileText, Clock, BarChart3, Calendar, CheckCircle } from "lucide-react";
 
 interface PageProps {
@@ -14,6 +15,9 @@ export default async function FreeResourcePage({ params }: PageProps) {
 
   const resource = await prisma.resource.findUnique({
     where: { slug, type: "free", status: "published" },
+    include: {
+      faqs: { orderBy: { sortOrder: "asc" } },
+    },
   });
 
   if (!resource) notFound();
@@ -94,6 +98,13 @@ export default async function FreeResourcePage({ params }: PageProps) {
               dangerouslySetInnerHTML={{ __html: resource.longDescription }}
             />
           </div>
+
+          {/* FAQ */}
+          {resource.faqs && resource.faqs.length > 0 && (
+            <div className="mt-12">
+              <FAQSection faqs={resource.faqs} />
+            </div>
+          )}
         </div>
 
         {/* Right: Download button (sticky) */}

@@ -1,6 +1,43 @@
 import nodemailer from "nodemailer";
 import { google } from "googleapis";
 
+// ─── Logging helper ──────────────────────────────────────────────────────────
+function emailLog(level: "info" | "warn" | "error", message: string, data?: unknown) {
+  const prefix = `[Email][${new Date().toISOString()}]`;
+  if (level === "error") {
+    console.error(prefix, message, data ?? "");
+  } else if (level === "warn") {
+    console.warn(prefix, message, data ?? "");
+  } else {
+    console.log(prefix, message, data ?? "");
+  }
+}
+
+// ─── SMTP Transport (Nodemailer) — fallback fiable ───────────────────────────
+function getSmtpTransport() {
+  const host = process.env.SMTP_HOST;
+  const port = parseInt(process.env.SMTP_PORT || "587", 10);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASSWORD;
+
+  if (!host || !user || !pass) {
+    return null;
+  }
+
+  // Ignorer le transport Mailtrap sandbox en production
+  if (host.includes("mailtrap") && process.env.NODE_ENV === "production") {
+    emailLog("warn", "SMTP Mailtrap sandbox détecté en production — transport SMTP ignoré");
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+}
+
 // ─── Gmail API via Service Account (domain-wide delegation) ───────────────────
 function getGmailClient() {
   const serviceAccountEmail = process.env.GMAIL_SERVICE_ACCOUNT_EMAIL;
@@ -8,9 +45,25 @@ function getGmailClient() {
   const gmailUser = process.env.GMAIL_USER;
 
   if (!serviceAccountEmail || !privateKey || !gmailUser) {
+    emailLog("error", "Variables Gmail manquantes", {
+      hasServiceAccountEmail: !!serviceAccountEmail,
+      hasPrivateKey: !!privateKey,
+      privateKeyLength: privateKey?.length ?? 0,
+      hasGmailUser: !!gmailUser,
+    });
     throw new Error(
       "Variables Gmail manquantes : GMAIL_SERVICE_ACCOUNT_EMAIL, GMAIL_PRIVATE_KEY, GMAIL_USER"
     );
+  }
+
+  // Validation de la clé privée
+  if (!privateKey.includes("-----BEGIN") || !privateKey.includes("PRIVATE KEY-----")) {
+    emailLog("error", "GMAIL_PRIVATE_KEY ne semble pas être une clé PEM valide", {
+      startsWithDash: privateKey.startsWith("-----"),
+      length: privateKey.length,
+      first30chars: privateKey.substring(0, 30),
+    });
+    throw new Error("GMAIL_PRIVATE_KEY invalide — format PEM attendu");
   }
 
   const jwtClient = new google.auth.JWT({
@@ -23,7 +76,7 @@ function getGmailClient() {
   return google.gmail({ version: "v1", auth: jwtClient });
 }
 
-// Construire un email RFC 2822 brut depuis les options nodemailer
+// Construire un email RFC 2822 brut
 function buildRawEmail(options: {
   from?: string;
   to: string;
@@ -32,6 +85,13 @@ function buildRawEmail(options: {
 }): string {
   const boundary = `boundary_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   const fromAddr = options.from || process.env.EMAIL_FROM || process.env.GMAIL_USER || "";
+  
+  // Encoder le contenu HTML en base64 avec des lignes de 76 caractères (RFC 2045)
+  const htmlBase64 = Buffer.from(options.html)
+    .toString("base64")
+    .match(/.{1,76}/g)
+    ?.join("\r\n") || "";
+  
   const lines = [
     `From: ${fromAddr}`,
     `To: ${options.to}`,
@@ -43,24 +103,23 @@ function buildRawEmail(options: {
     `Content-Type: text/html; charset="UTF-8"`,
     `Content-Transfer-Encoding: base64`,
     ``,
-    Buffer.from(options.html).toString("base64").replace(/(.{76})/g, "$1\n"),
+    htmlBase64,
     ``,
     `--${boundary}--`,
   ];
   return lines.join("\r\n");
 }
 
-// Envoyer un email via l'API Gmail (pas SMTP)
-async function sendMailViaGmail(mailOptions: {
+// ─── Envoi via Gmail API ─────────────────────────────────────────────────────
+async function sendViaGmailApi(mailOptions: {
   from?: string;
   to: string;
   subject: string;
   html: string;
-}) {
+}): Promise<{ method: "gmail-api"; messageId?: string }> {
   const gmail = getGmailClient();
   const raw = buildRawEmail(mailOptions);
 
-  // Encoder en base64url pour l'API Gmail
   const encodedMessage = Buffer.from(raw)
     .toString("base64")
     .replace(/\+/g, "-")
@@ -69,12 +128,137 @@ async function sendMailViaGmail(mailOptions: {
 
   const result = await gmail.users.messages.send({
     userId: "me",
-    requestBody: {
-      raw: encodedMessage,
-    },
+    requestBody: { raw: encodedMessage },
   });
 
-  return result.data;
+  return { method: "gmail-api", messageId: result.data.id ?? undefined };
+}
+
+// ─── Envoi via SMTP (Nodemailer) ─────────────────────────────────────────────
+async function sendViaSmtp(mailOptions: {
+  from?: string;
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ method: "smtp"; messageId?: string }> {
+  const transport = getSmtpTransport();
+  if (!transport) {
+    throw new Error("Transport SMTP non configuré (variables SMTP_HOST/SMTP_USER/SMTP_PASSWORD manquantes)");
+  }
+
+  const fromAddr = mailOptions.from || process.env.EMAIL_FROM || process.env.GMAIL_USER || "";
+
+  const result = await transport.sendMail({
+    from: fromAddr,
+    to: mailOptions.to,
+    subject: mailOptions.subject,
+    html: mailOptions.html,
+  });
+
+  return { method: "smtp", messageId: result.messageId };
+}
+
+// ─── Envoi principal avec fallback ───────────────────────────────────────────
+async function sendMailViaGmail(mailOptions: {
+  from?: string;
+  to: string;
+  subject: string;
+  html: string;
+}) {
+  const logContext = { to: mailOptions.to, subject: mailOptions.subject.slice(0, 50) };
+
+  // Tentative 1 : Gmail API
+  try {
+    const result = await sendViaGmailApi(mailOptions);
+    emailLog("info", `✅ Email envoyé via Gmail API`, { ...logContext, messageId: result.messageId });
+    return result;
+  } catch (gmailError: any) {
+    emailLog("error", `❌ Gmail API a échoué`, {
+      ...logContext,
+      errorMessage: gmailError?.message,
+      errorCode: gmailError?.code,
+      errorStatus: gmailError?.response?.status,
+      errorData: gmailError?.response?.data?.error,
+      errors: gmailError?.errors,
+    });
+
+    // Tentative 2 : Fallback SMTP
+    try {
+      const result = await sendViaSmtp(mailOptions);
+      emailLog("info", `✅ Email envoyé via SMTP (fallback)`, { ...logContext, messageId: result.messageId });
+      return result;
+    } catch (smtpError: any) {
+      emailLog("error", `❌ SMTP fallback a aussi échoué`, {
+        ...logContext,
+        smtpErrorMessage: smtpError?.message,
+        smtpErrorCode: smtpError?.code,
+      });
+
+      // Les deux méthodes ont échoué — remonter l'erreur originale
+      throw new Error(
+        `Échec envoi email à ${mailOptions.to} :\n` +
+        `  Gmail API: ${gmailError?.message}\n` +
+        `  SMTP: ${smtpError?.message}`
+      );
+    }
+  }
+}
+
+// ─── Fonction de diagnostic ──────────────────────────────────────────────────
+export async function testEmailSetup(testRecipient?: string): Promise<{
+  gmailApi: { configured: boolean; working: boolean; error?: string };
+  smtp: { configured: boolean; working: boolean; error?: string };
+  envVars: Record<string, boolean | string>;
+}> {
+  const recipient = testRecipient || process.env.ADMIN_EMAIL || process.env.GMAIL_USER || "";
+  
+  const result = {
+    gmailApi: { configured: false, working: false, error: undefined as string | undefined },
+    smtp: { configured: false, working: false, error: undefined as string | undefined },
+    envVars: {
+      GMAIL_SERVICE_ACCOUNT_EMAIL: !!process.env.GMAIL_SERVICE_ACCOUNT_EMAIL,
+      GMAIL_PRIVATE_KEY: !!process.env.GMAIL_PRIVATE_KEY,
+      GMAIL_PRIVATE_KEY_LENGTH: String(process.env.GMAIL_PRIVATE_KEY?.length ?? 0),
+      GMAIL_PRIVATE_KEY_FORMAT: process.env.GMAIL_PRIVATE_KEY?.replace(/\\n/g, "\n")?.includes("-----BEGIN") ? "PEM OK" : "INVALIDE",
+      GMAIL_USER: process.env.GMAIL_USER || "(non défini)",
+      EMAIL_FROM: process.env.EMAIL_FROM || "(non défini)",
+      SMTP_HOST: process.env.SMTP_HOST || "(non défini)",
+      SMTP_PORT: process.env.SMTP_PORT || "(non défini)",
+      SMTP_USER: !!process.env.SMTP_USER,
+      SMTP_PASSWORD: !!process.env.SMTP_PASSWORD,
+      ADMIN_EMAIL: process.env.ADMIN_EMAIL || "(non défini)",
+      NODE_ENV: process.env.NODE_ENV || "(non défini)",
+    },
+  };
+
+  // Test Gmail API
+  if (process.env.GMAIL_SERVICE_ACCOUNT_EMAIL && process.env.GMAIL_PRIVATE_KEY && process.env.GMAIL_USER) {
+    result.gmailApi.configured = true;
+    try {
+      await sendViaGmailApi({
+        to: recipient,
+        subject: "🧪 Test Gmail API — Big Five",
+        html: `<h2>Test Gmail API réussi !</h2><p>Envoyé le ${new Date().toLocaleString("fr-FR")} via Gmail API (Service Account delegation).</p>`,
+      });
+      result.gmailApi.working = true;
+    } catch (err: any) {
+      result.gmailApi.error = err?.message || String(err);
+    }
+  }
+
+  // Test SMTP
+  const smtpTransport = getSmtpTransport();
+  if (smtpTransport) {
+    result.smtp.configured = true;
+    try {
+      await smtpTransport.verify();
+      result.smtp.working = true;
+    } catch (err: any) {
+      result.smtp.error = err?.message || String(err);
+    }
+  }
+
+  return result;
 }
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://digitalbigfive.vercel.app";

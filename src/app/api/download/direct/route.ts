@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendDownloadEmail } from "@/lib/email";
 import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
@@ -92,9 +94,25 @@ export async function POST(request: NextRequest) {
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://digitalbigfive.vercel.app";
+    const downloadUrl = `${appUrl}/api/download/${token}`;
+
+    // Envoyer l'email avec le lien de téléchargement via after() pour Vercel
+    after(async () => {
+      try {
+        await sendDownloadEmail({
+          to: email,
+          firstName,
+          resourceTitle: resource.title,
+          downloadUrl,
+        });
+        console.log("[Download] \u2705 Email t\u00e9l\u00e9chargement envoy\u00e9 \u00e0", email);
+      } catch (err: any) {
+        console.error("[Download] \u274c \u00c9chec envoi lien t\u00e9l\u00e9chargement:", err?.message || err);
+      }
+    });
 
     return NextResponse.json({
-      downloadUrl: `${appUrl}/api/download/${token}`,
+      downloadUrl,
       expiresAt: expiresAt.toISOString(),
     });
   } catch (error) {
