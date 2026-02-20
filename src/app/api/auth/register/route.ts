@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,6 +43,11 @@ export async function POST(req: NextRequest) {
         phone: phone || null,
       },
     });
+
+    // Envoi email de bienvenue (sans bloquer la réponse)
+    sendWelcomeEmail({ to: email, firstName }).catch((err) =>
+      console.error("[Email] Échec envoi bienvenue:", err)
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

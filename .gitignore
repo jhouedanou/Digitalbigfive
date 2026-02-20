@@ -149,3 +149,8 @@ vite.config.ts.timestamp-*
 electron/dist/
 dist-electron/
 nul
+
+# Google Service Account keys
+*.json.key
+bigfive-email-*.json
+*-service-account*.json

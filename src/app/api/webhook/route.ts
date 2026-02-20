@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyIpnSignature, verifyIpnSha256 } from "@/lib/paytech";
+import { sendOrderConfirmation, sendAdminNewOrderNotification } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,13 +55,39 @@ export async function POST(request: NextRequest) {
 
     switch (type_event) {
       case "sale_complete": {
-        await prisma.order.update({
+        const updatedOrder = await prisma.order.update({
           where: { id: order.id },
           data: {
             status: "paid",
             paytechPaymentRef: token || ref_command,
           },
+          include: {
+            user: true,
+            resource: true,
+          },
         });
+
+        // Email confirmation client
+        sendOrderConfirmation({
+          to: updatedOrder.user.email,
+          firstName: updatedOrder.user.firstName,
+          resourceTitle: updatedOrder.resource.title,
+          amount: updatedOrder.amount,
+          currency: updatedOrder.currency,
+          orderId: updatedOrder.id,
+          dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/produits`,
+        }).catch((err) => console.error("[Email] Échec confirmation achat:", err));
+
+        // Notification admin
+        sendAdminNewOrderNotification({
+          customerName: `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`,
+          customerEmail: updatedOrder.user.email,
+          resourceTitle: updatedOrder.resource.title,
+          amount: updatedOrder.amount,
+          currency: updatedOrder.currency,
+          orderId: updatedOrder.id,
+        }).catch((err) => console.error("[Email] Échec notif admin:", err));
+
         break;
       }
 
