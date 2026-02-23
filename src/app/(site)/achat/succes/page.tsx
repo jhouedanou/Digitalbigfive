@@ -19,7 +19,8 @@ interface OrderDetails {
 
 function SuccessContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  // PayTech peut envoyer le token sous différents noms selon la version
+  const token = searchParams.get("token") || searchParams.get("token_payment") || searchParams.get("ref");
   const [status, setStatus] = useState<"loading" | "success" | "pending" | "failed">(
     "loading"
   );
@@ -33,6 +34,10 @@ function SuccessContent() {
   const [loginError, setLoginError] = useState("");
   const [loginSuccess, setLoginSuccess] = useState(false);
 
+  // État pour le polling
+  const [pollCount, setPollCount] = useState(0);
+  const MAX_POLLS = 12; // 12 × 3s = 36 secondes max
+
   useEffect(() => {
     // Vérifier si c'est un nouvel utilisateur créé lors du paiement
     const stored = sessionStorage.getItem("newUserAfterPayment");
@@ -43,51 +48,61 @@ function SuccessContent() {
       } catch { /* ignore */ }
     }
 
+    let attempts = 0;
+    let pollTimer: ReturnType<typeof setTimeout>;
+
     async function verifyPayment() {
       try {
-        // Essayer de vérifier avec le token PayTech
-        const url = token 
+        // PayTech passe le token dans l'URL → on vérifie d'abord par token
+        // Sinon fallback sur la dernière commande de l'utilisateur connecté
+        const url = token
           ? `/api/checkout/verify?token=${token}`
           : `/api/checkout/verify-latest`;
-        
+
         const res = await fetch(url);
 
-        // Erreur HTTP (401 = non connecté, 5xx = serveur) → afficher pending
-        // Le paiement est peut-être en cours de traitement
         if (!res.ok) {
-          setStatus("pending");
+          // 401 = non connecté, 5xx = erreur serveur → continuer à poller
+          scheduleRetry();
           return;
         }
 
         const data = await res.json();
-        
+
         if (data.status === "success" || data.status === "paid") {
           setStatus("success");
           if (data.order) {
             setOrderDetails(data.order);
-            // Auto-show download prompt after payment success
             setTimeout(() => setShowDownloadPrompt(true), 1000);
           }
-        } else if (data.status === "pending" || data.status === "not_found" || data.status === "error") {
-          // Erreur d'auth, commande non trouvée ou en attente → afficher pending
-          setStatus("pending");
-          if (data.order) {
-            setOrderDetails(data.order);
-          }
         } else if (data.status === "failed") {
-          // Seul un échec explicite de paiement affiche la page d'échec
           setStatus("failed");
         } else {
-          // Statut inconnu → pending par sécurité
-          setStatus("pending");
+          // pending / not_found / error → PayTech IPN pas encore reçu, on repoll
+          if (data.order) setOrderDetails(data.order);
+          scheduleRetry();
         }
       } catch {
-        // En cas d'erreur réseau, afficher pending
+        scheduleRetry();
+      }
+    }
+
+    function scheduleRetry() {
+      attempts += 1;
+      setPollCount(attempts);
+      if (attempts < MAX_POLLS) {
+        // Backoff progressif : 3s les 4 premières fois, puis 5s
+        const delay = attempts < 4 ? 3000 : 5000;
+        pollTimer = setTimeout(verifyPayment, delay);
+      } else {
+        // Après 36s sans confirmation → afficher "en attente"
         setStatus("pending");
       }
     }
 
     verifyPayment();
+
+    return () => clearTimeout(pollTimer);
   }, [token]);
 
   // Connexion rapide pour les nouveaux utilisateurs après paiement
@@ -124,11 +139,16 @@ function SuccessContent() {
       <div className="max-w-xl mx-auto px-4 py-24 text-center">
         <div className="w-16 h-16 border-4 border-[#80368D] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
         <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          Vérification du paiement...
+          Confirmation du paiement...
         </h1>
-        <p className="text-gray-600">
-          Veuillez patienter pendant que nous confirmons votre paiement.
+        <p className="text-gray-600 mb-3">
+          Nous attendons la confirmation de PayTech.
         </p>
+        {pollCount > 0 && (
+          <p className="text-sm text-gray-400">
+            Vérification {pollCount}/{MAX_POLLS}...
+          </p>
+        )}
       </div>
     );
   }
