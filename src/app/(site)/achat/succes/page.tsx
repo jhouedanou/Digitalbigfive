@@ -39,12 +39,22 @@ function SuccessContent() {
   const MAX_POLLS = 12; // 12 × 3s = 36 secondes max
 
   useEffect(() => {
-    // Vérifier si c'est un nouvel utilisateur créé lors du paiement
+    // Vérifier si c'est un nouvel utilisateur créé lors du paiement (fallback connexion)
     const stored = sessionStorage.getItem("newUserAfterPayment");
     if (stored) {
       try {
         const { email } = JSON.parse(stored);
-        if (email) setNewUserEmail(email);
+        // N'afficher le formulaire de connexion que si Supabase ne nous a pas connecté
+        const supabase = createClient();
+        supabase.auth.getSession().then(({ data }) => {
+          if (!data.session) {
+            // Pas de session active → afficher le formulaire de connexion rapide
+            if (email) setNewUserEmail(email);
+          } else {
+            // Déjà connecté → nettoyer le sessionStorage
+            sessionStorage.removeItem("newUserAfterPayment");
+          }
+        });
       } catch { /* ignore */ }
     }
 

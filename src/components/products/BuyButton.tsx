@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/SessionProvider";
+import { createClient } from "@/lib/supabase-browser";
 import Link from "next/link";
 import PhoneInputWithCode from "@/components/shared/PhoneInputWithCode";
 
@@ -101,13 +102,31 @@ export default function BuyButton({ resourceSlug, className = "" }: BuyButtonPro
         throw new Error(data.error || "Erreur lors de l'inscription");
       }
 
-      // Sauvegarder en sessionStorage pour que la page succès sache qu'il s'agit d'un
-      // nouveau compte et affiche un formulaire de connexion
+      // Sauvegarder en sessionStorage (fallback si la connexion échoue)
       if (data.isNewUser && data.userEmail) {
         sessionStorage.setItem("newUserAfterPayment", JSON.stringify({
           email: data.userEmail,
           orderId: data.orderId,
         }));
+      }
+
+      // Connecter l'utilisateur automatiquement avant de le rediriger vers PayTech
+      if (data.isNewUser && data.userEmail) {
+        try {
+          const supabase = createClient();
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: data.userEmail,
+            password,
+          });
+          if (signInError) {
+            console.warn("[BuyButton] Auto-login échoué:", signInError.message);
+            // On continue quand même vers le paiement
+          } else {
+            console.log("[BuyButton] ✅ Utilisateur connecté automatiquement");
+          }
+        } catch (loginErr) {
+          console.warn("[BuyButton] Erreur auto-login:", loginErr);
+        }
       }
 
       // Redirect to PayTech checkout
