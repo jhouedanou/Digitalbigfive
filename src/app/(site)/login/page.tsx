@@ -11,6 +11,10 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const inscriptionHref = redirect && redirect !== "/dashboard"
+    ? `/inscription?redirect=${encodeURIComponent(redirect)}`
+    : "/inscription";
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -33,50 +37,59 @@ function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Email
-        </label>
-        <input
-          name="email"
-          type="email"
-          required
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Mot de passe
-        </label>
-        <input
-          name="password"
-          type="password"
-          required
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
-        />
-      </div>
+    <>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Email
+          </label>
+          <input
+            name="email"
+            type="email"
+            required
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Mot de passe
+          </label>
+          <input
+            name="password"
+            type="password"
+            required
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
+          />
+        </div>
 
-      <div className="text-right">
-        <Link href="/reset-password" className="text-sm text-[#80368D] hover:underline">
-          Mot de passe oublié ?
+        <div className="text-right">
+          <Link href="/reset-password" className="text-sm text-[#80368D] hover:underline">
+            Mot de passe oublié ?
+          </Link>
+        </div>
+
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">
+            {error}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-[#80368D] text-white py-3 rounded-lg font-semibold hover:bg-[#6a2d76] transition-colors disabled:opacity-50"
+        >
+          {loading ? "Connexion..." : "Se connecter"}
+        </button>
+      </form>
+
+      <p className="text-sm text-gray-500 text-center mt-6">
+        Pas encore de compte ?{" "}
+        <Link href={inscriptionHref} className="text-[#80368D] underline">
+          Créer un compte
         </Link>
-      </div>
-
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">
-          {error}
-        </p>
-      )}
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-[#80368D] text-white py-3 rounded-lg font-semibold hover:bg-[#6a2d76] transition-colors disabled:opacity-50"
-      >
-        {loading ? "Connexion..." : "Se connecter"}
-      </button>
-    </form>
+      </p>
+    </>
   );
 }
 
@@ -93,13 +106,6 @@ export default function LoginPage() {
       <Suspense fallback={<div className="h-40" />}>
         <LoginForm />
       </Suspense>
-
-      <p className="text-sm text-gray-500 text-center mt-6">
-        Pas encore de compte ?{" "}
-        <Link href="/inscription" className="text-[#80368D] underline">
-          Créer un compte
-        </Link>
-      </p>
     </div>
   );
 }

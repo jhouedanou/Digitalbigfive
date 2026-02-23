@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import PhoneInputWithCode from "@/components/shared/PhoneInputWithCode";
 
-export default function RegisterPage() {
-  const router = useRouter();
+function RegisterForm() {
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/dashboard";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const loginHref = redirect && redirect !== "/dashboard"
+    ? `/login?redirect=${encodeURIComponent(redirect)}`
+    : "/login";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -67,23 +72,29 @@ export default function RegisterPage() {
         throw new Error(data.error || "Erreur lors de l'inscription");
       }
 
-      router.push("/login?registered=true");
+      // 3. Auto-login après inscription
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        console.warn("[Inscription] Auto-login échoué:", signInError.message);
+        // Fallback : rediriger vers login
+        window.location.href = loginHref;
+        return;
+      }
+
+      // 4. Rediriger vers la page demandée
+      window.location.href = redirect;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="max-w-md mx-auto px-4 py-16">
-      <h1 className="text-2xl font-bold text-[#29358B] mb-2 text-center">
-        Créer un compte
-      </h1>
-      <p className="text-sm text-gray-500 text-center mb-8">
-        Accédez à vos produits achetés
-      </p>
-
+    <>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -185,10 +196,27 @@ export default function RegisterPage() {
 
       <p className="text-sm text-gray-500 text-center mt-6">
         Déjà un compte ?{" "}
-        <Link href="/login" className="text-[#80368D] underline">
+        <Link href={loginHref} className="text-[#80368D] underline">
           Se connecter
         </Link>
       </p>
+    </>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <div className="max-w-md mx-auto px-4 py-16">
+      <h1 className="text-2xl font-bold text-[#29358B] mb-2 text-center">
+        Créer un compte
+      </h1>
+      <p className="text-sm text-gray-500 text-center mb-8">
+        Accédez à vos produits achetés
+      </p>
+
+      <Suspense fallback={<div className="h-40" />}>
+        <RegisterForm />
+      </Suspense>
     </div>
   );
 }
