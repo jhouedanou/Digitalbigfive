@@ -101,6 +101,15 @@ export default function BuyButton({ resourceSlug, className = "" }: BuyButtonPro
         throw new Error(data.error || "Erreur lors de l'inscription");
       }
 
+      // Sauvegarder en sessionStorage pour que la page succès sache qu'il s'agit d'un
+      // nouveau compte et affiche un formulaire de connexion
+      if (data.isNewUser && data.userEmail) {
+        sessionStorage.setItem("newUserAfterPayment", JSON.stringify({
+          email: data.userEmail,
+          orderId: data.orderId,
+        }));
+      }
+
       // Redirect to PayTech checkout
       window.location.href = data.checkout_url;
     } catch (err) {

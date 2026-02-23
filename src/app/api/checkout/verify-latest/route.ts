@@ -7,9 +7,12 @@ export async function GET() {
     const session = await auth();
     
     if (!session?.user?.id) {
+      // Retourner pending plutôt qu'une erreur 401
+      // L'utilisateur vient peut-être de payer via register-and-checkout
+      // et n'est pas encore connecté — son paiement est en cours de traitement
       return NextResponse.json(
-        { status: "error", error: "Non connecté" },
-        { status: 401 }
+        { status: "pending", error: "Non connecté" },
+        { status: 200 }
       );
     }
 

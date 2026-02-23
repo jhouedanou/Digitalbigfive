@@ -48,7 +48,7 @@ export async function initializePayment(
       currency: params.currency,
       ref_command: params.refCommand,
       command_name: `Paiement ${params.description} - Big Five`,
-      env: "test",
+      env: process.env.PAYTECH_ENV || "prod",
       ipn_url: params.ipnUrl,
       success_url: params.returnUrl,
       cancel_url: params.cancelUrl,

@@ -57,6 +57,12 @@ function LoginForm() {
         />
       </div>
 
+      <div className="text-right">
+        <Link href="/reset-password" className="text-sm text-[#80368D] hover:underline">
+          Mot de passe oublié ?
+        </Link>
+      </div>
+
       {error && (
         <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">
           {error}

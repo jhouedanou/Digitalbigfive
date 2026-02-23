@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import { createClient } from "@/lib/supabase-browser";
 import DownloadPrompt from "@/components/library/DownloadPrompt";
 import { Download, BookOpen, ArrowRight } from "lucide-react";
 
@@ -25,7 +26,23 @@ function SuccessContent() {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [showDownloadPrompt, setShowDownloadPrompt] = useState(false);
 
+  // État pour la connexion rapide des nouveaux utilisateurs
+  const [newUserEmail, setNewUserEmail] = useState<string | null>(null);
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [loginSuccess, setLoginSuccess] = useState(false);
+
   useEffect(() => {
+    // Vérifier si c'est un nouvel utilisateur créé lors du paiement
+    const stored = sessionStorage.getItem("newUserAfterPayment");
+    if (stored) {
+      try {
+        const { email } = JSON.parse(stored);
+        if (email) setNewUserEmail(email);
+      } catch { /* ignore */ }
+    }
+
     async function verifyPayment() {
       try {
         // Essayer de vérifier avec le token PayTech
@@ -34,6 +51,14 @@ function SuccessContent() {
           : `/api/checkout/verify-latest`;
         
         const res = await fetch(url);
+
+        // Erreur HTTP (401 = non connecté, 5xx = serveur) → afficher pending
+        // Le paiement est peut-être en cours de traitement
+        if (!res.ok) {
+          setStatus("pending");
+          return;
+        }
+
         const data = await res.json();
         
         if (data.status === "success" || data.status === "paid") {
@@ -43,22 +68,56 @@ function SuccessContent() {
             // Auto-show download prompt after payment success
             setTimeout(() => setShowDownloadPrompt(true), 1000);
           }
-        } else if (data.status === "pending") {
+        } else if (data.status === "pending" || data.status === "not_found" || data.status === "error") {
+          // Erreur d'auth, commande non trouvée ou en attente → afficher pending
           setStatus("pending");
           if (data.order) {
             setOrderDetails(data.order);
           }
-        } else {
+        } else if (data.status === "failed") {
+          // Seul un échec explicite de paiement affiche la page d'échec
           setStatus("failed");
+        } else {
+          // Statut inconnu → pending par sécurité
+          setStatus("pending");
         }
       } catch {
-        // En cas d'erreur, afficher pending
+        // En cas d'erreur réseau, afficher pending
         setStatus("pending");
       }
     }
 
     verifyPayment();
   }, [token]);
+
+  // Connexion rapide pour les nouveaux utilisateurs après paiement
+  async function handleQuickLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newUserEmail || !loginPassword) return;
+    setLoginLoading(true);
+    setLoginError("");
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: newUserEmail,
+        password: loginPassword,
+      });
+      if (error) {
+        setLoginError("Mot de passe incorrect. Veuillez réessayer.");
+        setLoginLoading(false);
+        return;
+      }
+      // Connexion réussie : nettoyer sessionStorage et recharger
+      sessionStorage.removeItem("newUserAfterPayment");
+      setLoginSuccess(true);
+      setLoginLoading(false);
+      // Recharger la page pour que la session soit prise en compte
+      setTimeout(() => window.location.reload(), 800);
+    } catch {
+      setLoginError("Erreur de connexion. Veuillez réessayer.");
+      setLoginLoading(false);
+    }
+  }
 
   if (status === "loading") {
     return (
@@ -113,6 +172,53 @@ function SuccessContent() {
           Votre paiement est en cours de confirmation. Vous recevrez un email
           dès que votre commande sera validée.
         </p>
+
+        {/* Connexion rapide pour les nouveaux utilisateurs */}
+        {newUserEmail && !loginSuccess && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6 text-left">
+            <h3 className="text-base font-semibold text-blue-900 mb-1">
+              🎉 Votre compte a été créé !
+            </h3>
+            <p className="text-sm text-blue-700 mb-4">
+              Connectez-vous dès maintenant pour accéder à votre contenu dès que le paiement sera confirmé.
+            </p>
+            <form onSubmit={handleQuickLogin} className="space-y-3">
+              <input
+                type="email"
+                value={newUserEmail}
+                readOnly
+                title="Email"
+                aria-label="Email du compte créé"
+                className="w-full border border-blue-300 rounded-lg px-3 py-2 text-sm bg-blue-100 text-blue-800 cursor-not-allowed"
+              />
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="Votre mot de passe"
+                required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
+              />
+              {loginError && (
+                <p className="text-sm text-red-600">{loginError}</p>
+              )}
+              <button
+                type="submit"
+                disabled={loginLoading || !loginPassword}
+                className="w-full bg-[#80368D] text-white py-2 rounded-lg text-sm font-semibold hover:bg-[#6a2d76] disabled:opacity-50"
+              >
+                {loginLoading ? "Connexion..." : "Se connecter"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {loginSuccess && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+            <p className="text-green-700 font-medium">✅ Connecté ! Rechargement en cours...</p>
+          </div>
+        )}
+
         <Link
           href="/dashboard/produits"
           className="inline-block bg-[#80368D] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#6a2d76]"
@@ -191,6 +297,49 @@ function SuccessContent() {
           Ma bibliothèque
         </Link>
       </div>
+
+      {/* Connexion rapide si nouvel utilisateur non connecté */}
+      {newUserEmail && !loginSuccess && (
+        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
+          <h3 className="text-base font-semibold text-blue-900 mb-1">
+            🔐 Connectez-vous pour accéder à votre contenu
+          </h3>
+          <p className="text-sm text-blue-700 mb-4">
+            Votre compte a été créé avec l&apos;email <strong>{newUserEmail}</strong>. Entrez votre mot de passe pour y accéder.
+          </p>
+          <form onSubmit={handleQuickLogin} className="space-y-3">
+            <input
+              type="email"
+              value={newUserEmail}
+              readOnly
+              title="Email"
+              aria-label="Email du compte créé"
+              className="w-full border border-blue-300 rounded-lg px-3 py-2 text-sm bg-blue-100 text-blue-800 cursor-not-allowed"
+            />
+            <input
+              type="password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              placeholder="Votre mot de passe"
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#80368D]"
+            />
+            {loginError && (
+              <p className="text-sm text-red-600">{loginError}</p>
+            )}
+            <button
+              type="submit"
+              disabled={loginLoading || !loginPassword}
+              className="w-full bg-[#80368D] text-white py-2 rounded-lg text-sm font-semibold hover:bg-[#6a2d76] disabled:opacity-50"
+            >
+              {loginLoading ? "Connexion..." : "Se connecter et accéder à ma bibliothèque"}
+            </button>
+          </form>
+          {loginSuccess && (
+            <p className="text-green-700 font-medium mt-3">✅ Connecté ! Rechargement en cours...</p>
+          )}
+        </div>
+      )}
 
       {/* Quick Access */}
       <div className="mt-6 text-center">

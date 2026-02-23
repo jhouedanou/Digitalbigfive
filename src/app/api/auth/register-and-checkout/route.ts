@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { hash } from "bcryptjs";
+import { createClient } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma";
 import { initializePayment } from "@/lib/paytech";
 import { sendWelcomeEmail } from "@/lib/email";
+
+// Client Supabase Admin (service role) pour créer les comptes Auth côté serveur
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -71,7 +81,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create user account
+    // Create user account in Prisma DB
     const hashedPassword = await hash(password, 12);
     const user = await prisma.user.create({
       data: {
@@ -84,6 +94,23 @@ export async function POST(req: NextRequest) {
         phone: phone || null,
       },
     });
+
+    // Créer le compte Supabase Auth pour que l'utilisateur puisse se connecter après paiement
+    const supabaseAdmin = getSupabaseAdmin();
+    const { error: supabaseAuthError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true, // Confirmer l'email automatiquement (pas besoin de vérification)
+      user_metadata: {
+        first_name: firstName,
+        last_name: lastName,
+      },
+    });
+
+    if (supabaseAuthError) {
+      // Si le compte Supabase existe déjà (cas rare), on continue quand même
+      console.warn("[RegisterAndCheckout] Supabase Auth warning:", supabaseAuthError.message);
+    }
 
     // Create a pending order
     const order = await prisma.order.create({
@@ -137,6 +164,8 @@ export async function POST(req: NextRequest) {
       success: true,
       checkout_url: payment.redirect_url,
       orderId: order.id,
+      userEmail: email, // Retourner l'email pour auto-remplissage de la connexion après paiement
+      isNewUser: true,
     });
   } catch (error: any) {
     console.error("Register and checkout error:", error?.message || error);
