@@ -5,6 +5,7 @@ import { formatPrice, formatDate } from "@/lib/utils";
 import BuyButton from "@/components/products/BuyButton";
 import FAQSection from "@/components/products/FAQSection";
 import TestimonialSection from "@/components/products/TestimonialSection";
+import ViewContentTracker from "@/components/tracking/ViewContentTracker";
 import {
   ShieldCheck,
   Zap,
@@ -115,6 +116,15 @@ export default async function ProductPage({ params }: PageProps) {
 
   return (
     <div>
+      {/* Meta Pixel + CAPI: ViewContent */}
+      <ViewContentTracker
+        contentId={resource.slug}
+        contentName={resource.title}
+        contentCategory={resource.category}
+        value={resource.price || 0}
+        currency={resource.currency}
+      />
+
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import PhoneInputWithCode from "@/components/shared/PhoneInputWithCode";
+import { trackPixelEvent } from "@/lib/pixel";
 
 function RegisterForm() {
   const searchParams = useSearchParams();
@@ -71,6 +72,13 @@ function RegisterForm() {
         const data = await res.json();
         throw new Error(data.error || "Erreur lors de l'inscription");
       }
+
+      // Événement Pixel : CompleteRegistration (CAPI envoyé par l'API /api/auth/register)
+      trackPixelEvent(
+        "CompleteRegistration",
+        { status: true },
+        `registration_${email}_${Date.now()}`
+      );
 
       // 3. Auto-login après inscription
       const { error: signInError } = await supabase.auth.signInWithPassword({

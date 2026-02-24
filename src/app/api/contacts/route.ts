@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendContactConfirmationEmail, sendAdminNewContactNotification } from "@/lib/email";
+import { sendCAPIEvent } from "@/lib/meta-tracking";
 
 export async function GET() {
   const session = await auth();
@@ -55,17 +56,40 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Envoyer les emails via after() pour garantir l'envoi sur Vercel
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+               request.headers.get("x-real-ip") || undefined;
+    const userAgent = request.headers.get("user-agent") || undefined;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    // Envoyer les emails + CAPI via after() pour garantir l'envoi sur Vercel
     after(async () => {
+      // CAPI : Lead
+      try {
+        await sendCAPIEvent({
+          eventName: "Lead",
+          eventId: `lead_${email}_${Date.now()}`,
+          email,
+          firstName,
+          lastName,
+          ip,
+          userAgent,
+          sourceUrl: `${appUrl}/contact`,
+          customData: { content_name: "Contact Form" },
+        });
+        console.log("[Contact] ✅ CAPI Lead envoyé");
+      } catch (err: any) {
+        console.error("[Contact] ❌ CAPI Lead échoué:", err?.message || err);
+      }
+
       try {
         await sendContactConfirmationEmail({
           to: email,
           firstName,
           message,
         });
-        console.log("[Contact] \u2705 Confirmation email envoy\u00e9 \u00e0", email);
+        console.log("[Contact] ✅ Confirmation email envoyé à", email);
       } catch (err: any) {
-        console.error("[Contact] \u274c \u00c9chec confirmation contact:", err?.message || err);
+        console.error("[Contact] ❌ Échec confirmation contact:", err?.message || err);
       }
 
       try {
@@ -74,9 +98,9 @@ export async function POST(request: NextRequest) {
           contactEmail: email,
           message,
         });
-        console.log("[Contact] \u2705 Notification admin envoy\u00e9e");
+        console.log("[Contact] ✅ Notification admin envoyée");
       } catch (err: any) {
-        console.error("[Contact] \u274c \u00c9chec notif admin contact:", err?.message || err);
+        console.error("[Contact] ❌ Échec notif admin contact:", err?.message || err);
       }
     });
 

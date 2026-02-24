@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 
 export default function AdminTrackingPage() {
   const [settings, setSettings] = useState({
-    meta_pixel_enabled: "false",
+    meta_pixel_enabled: "true",
     meta_pixel_id: "",
-    meta_capi_enabled: "false",
+    meta_capi_enabled: "true",
     meta_capi_token: "",
   });
   const [loading, setLoading] = useState(false);
@@ -107,11 +107,95 @@ export default function AdminTrackingPage() {
             />
           </div>
 
-          <p className="text-xs text-gray-500">
-            Les événements Purchase et CompleteRegistration seront envoyés
-            côté serveur. Les données personnelles sont hashées (SHA256) avant
-            envoi.
+          <div className="text-xs text-gray-500">
+            Les données personnelles sont hashées (SHA256) avant envoi.
+            Chaque événement est dédupliqué avec le Pixel via un eventId commun.
+          </div>
+        </div>
+
+        {/* État des événements */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <h2 className="text-lg font-semibold">État des événements</h2>
+          <p className="text-xs text-gray-500 mb-2">
+            Tous les événements sont activés automatiquement dès que le Pixel et/ou CAPI sont configurés.
           </p>
+          <div className="grid grid-cols-1 gap-2">
+            {[
+              {
+                name: "PageView",
+                desc: "Toutes les pages (automatique via PixelLoader)",
+                channel: "Pixel",
+              },
+              {
+                name: "ViewContent",
+                desc: "Pages produit / ressources",
+                channel: "Pixel + CAPI",
+              },
+              {
+                name: "InitiateCheckout",
+                desc: "Début de paiement (clic Acheter)",
+                channel: "Pixel + CAPI",
+              },
+              {
+                name: "Purchase",
+                desc: "Achat confirmé (webhook paiement)",
+                channel: "CAPI",
+              },
+              {
+                name: "CompleteRegistration",
+                desc: "Inscription d'un nouveau compte",
+                channel: "Pixel + CAPI",
+              },
+              {
+                name: "Lead",
+                desc: "Formulaire de contact",
+                channel: "CAPI",
+              },
+            ].map((evt) => {
+              const pixelOk =
+                settings.meta_pixel_enabled === "true" &&
+                !!settings.meta_pixel_id;
+              const capiOk =
+                settings.meta_capi_enabled === "true" &&
+                !!settings.meta_capi_token &&
+                !!settings.meta_pixel_id;
+              const isPixelEvent =
+                evt.channel === "Pixel" || evt.channel.includes("Pixel");
+              const isCapiEvent = evt.channel.includes("CAPI");
+              const active =
+                (isPixelEvent && pixelOk) || (isCapiEvent && capiOk);
+
+              return (
+                <div
+                  key={evt.name}
+                  className={`flex items-center justify-between rounded-lg px-4 py-2 text-sm ${
+                    active
+                      ? "bg-green-50 border border-green-200"
+                      : "bg-gray-50 border border-gray-200"
+                  }`}
+                >
+                  <div>
+                    <span className="font-semibold">{evt.name}</span>
+                    <span className="text-gray-500 ml-2">— {evt.desc}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        active
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      {active ? "✅ Actif" : "⚠️ Inactif"}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {evt.channel}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {success && (

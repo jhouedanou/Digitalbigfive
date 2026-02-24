@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sendWelcomeEmail } from "@/lib/email";
+import { sendCAPIEvent } from "@/lib/meta-tracking";
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,13 +45,36 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Envoi email de bienvenue via after() pour garantir l'envoi sur Vercel
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+               req.headers.get("x-real-ip") || undefined;
+    const userAgent = req.headers.get("user-agent") || undefined;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    // Envoi email de bienvenue + CAPI via after() pour garantir l'envoi sur Vercel
     after(async () => {
       try {
         await sendWelcomeEmail({ to: email, firstName });
         console.log("[Register] ✅ Email bienvenue envoyé à", email);
       } catch (err: any) {
         console.error("[Register] ❌ Échec envoi bienvenue:", err?.message || err);
+      }
+
+      // CAPI : CompleteRegistration
+      try {
+        await sendCAPIEvent({
+          eventName: "CompleteRegistration",
+          eventId: `registration_${email}_${Date.now()}`,
+          email,
+          firstName,
+          lastName,
+          ip,
+          userAgent,
+          sourceUrl: `${appUrl}/inscription`,
+          customData: { status: true },
+        });
+        console.log("[Register] ✅ CAPI CompleteRegistration envoyé");
+      } catch (err: any) {
+        console.error("[Register] ❌ CAPI CompleteRegistration échoué:", err?.message || err);
       }
     });
 

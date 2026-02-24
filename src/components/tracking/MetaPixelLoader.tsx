@@ -13,7 +13,8 @@ export default async function MetaPixelLoader() {
     config[s.key] = s.value;
   });
 
-  if (config.meta_pixel_enabled !== "true" || !config.meta_pixel_id) {
+  // Actif dès qu'un Pixel ID est renseigné (cohérent avec PixelLoader)
+  if (!config.meta_pixel_id) {
     return null;
   }
 

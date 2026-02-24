@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import AuthProvider from "@/components/providers/SessionProvider";
 import { ServiceWorkerProvider } from "@/components/pwa/ServiceWorkerProvider";
 import PageTransitionBar from "@/components/layout/PageTransitionBar";
@@ -55,7 +56,9 @@ export default function RootLayout({
       <body className="antialiased">
         <AuthProvider>
           <ServiceWorkerProvider>
-            <PixelLoader />
+            <Suspense fallback={null}>
+              <PixelLoader />
+            </Suspense>
             <PageTransitionBar />
             <ElectronUpdater />
             {children}

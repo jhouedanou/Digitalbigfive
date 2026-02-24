@@ -54,7 +54,20 @@ export async function sendCAPIEvent({
   customData?: Record<string, unknown>;
 }) {
   const config = await getMetaConfig();
-  if (!config.capiEnabled || !config.capiToken || !config.pixelId) return;
+
+  // Log pour diagnostiquer les problèmes de configuration
+  if (!config.capiEnabled) {
+    console.warn("[CAPI] ⚠️ CAPI désactivé (meta_capi_enabled != 'true' dans SiteSettings)");
+    return;
+  }
+  if (!config.capiToken) {
+    console.warn("[CAPI] ⚠️ Token CAPI manquant (meta_capi_token vide dans SiteSettings)");
+    return;
+  }
+  if (!config.pixelId) {
+    console.warn("[CAPI] ⚠️ Pixel ID manquant (meta_pixel_id vide dans SiteSettings)");
+    return;
+  }
 
   const userData: Record<string, unknown> = {};
   if (email) userData.em = [hashSHA256(email)];
@@ -78,15 +91,24 @@ export async function sendCAPIEvent({
   };
 
   try {
-    await fetch(
-      `https://graph.facebook.com/v18.0/${config.pixelId}/events?access_token=${config.capiToken}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(eventData),
-      }
-    );
+    const url = `https://graph.facebook.com/v21.0/${config.pixelId}/events?access_token=${config.capiToken}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(eventData),
+    });
+
+    const responseBody = await response.text();
+
+    if (!response.ok) {
+      console.error(
+        `[CAPI] ❌ ${eventName} échoué (HTTP ${response.status}):`,
+        responseBody
+      );
+    } else {
+      console.log(`[CAPI] ✅ ${eventName} envoyé (eventId: ${eventId})`);
+    }
   } catch (error) {
-    console.error("CAPI event failed:", error);
+    console.error(`[CAPI] ❌ ${eventName} erreur réseau:`, error);
   }
 }

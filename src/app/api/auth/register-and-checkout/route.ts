@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma";
 import { initializePayment } from "@/lib/paytech";
 import { sendWelcomeEmail } from "@/lib/email";
+import { sendCAPIEvent } from "@/lib/meta-tracking";
 
 // Client Supabase Admin (service role) pour créer les comptes Auth côté serveur
 function getSupabaseAdmin() {
@@ -150,13 +151,58 @@ export async function POST(req: NextRequest) {
       data: { paytechToken: payment.token },
     });
 
-    // Send welcome email asynchronously
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+               req.headers.get("x-real-ip") || undefined;
+    const userAgent = req.headers.get("user-agent") || undefined;
+
+    // Send welcome email + CAPI events asynchronously
     after(async () => {
       try {
         await sendWelcomeEmail({ to: email, firstName });
         console.log("[RegisterAndCheckout] ✅ Email bienvenue envoyé à", email);
       } catch (err: any) {
         console.error("[RegisterAndCheckout] ❌ Échec envoi bienvenue:", err?.message || err);
+      }
+
+      // CAPI : CompleteRegistration
+      try {
+        await sendCAPIEvent({
+          eventName: "CompleteRegistration",
+          eventId: `registration_${user.id}`,
+          email,
+          firstName,
+          lastName,
+          ip,
+          userAgent,
+          sourceUrl: `${appUrl}/inscription`,
+          customData: { status: true },
+        });
+        console.log("[RegisterAndCheckout] ✅ CAPI CompleteRegistration envoyé");
+      } catch (err: any) {
+        console.error("[RegisterAndCheckout] ❌ CAPI CompleteRegistration échoué:", err?.message || err);
+      }
+
+      // CAPI : InitiateCheckout
+      try {
+        await sendCAPIEvent({
+          eventName: "InitiateCheckout",
+          eventId: `checkout_${order.id}`,
+          email,
+          firstName,
+          lastName,
+          ip,
+          userAgent,
+          sourceUrl: `${appUrl}/produits/${resourceSlug}`,
+          customData: {
+            value: resource.price,
+            currency: resource.currency || "XOF",
+            content_ids: [resource.slug],
+            num_items: 1,
+          },
+        });
+        console.log("[RegisterAndCheckout] ✅ CAPI InitiateCheckout envoyé");
+      } catch (err: any) {
+        console.error("[RegisterAndCheckout] ❌ CAPI InitiateCheckout échoué:", err?.message || err);
       }
     });
 
