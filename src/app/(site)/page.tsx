@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
-import ResourceCard from "@/components/resources/ResourceCard";
 import FilterBar from "@/components/resources/FilterBar";
+import ResourceGrid from "@/components/resources/ResourceGrid";
 import DownloadAppButton from "@/components/pwa/DownloadAppButton";
+
+const PAGE_SIZE = 6;
 
 interface PageProps {
   searchParams: Promise<{
@@ -25,10 +27,37 @@ export default async function LibraryPage({ searchParams }: PageProps) {
   if (params.level) where.level = params.level;
   if (params.format) where.format = params.format;
 
-  const resources = await prisma.resource.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-  });
+  const [resources, total] = await Promise.all([
+    prisma.resource.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: PAGE_SIZE,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        shortDescription: true,
+        coverImage: true,
+        type: true,
+        category: true,
+        level: true,
+        resourceType: true,
+        price: true,
+        originalPrice: true,
+        currency: true,
+      },
+    }),
+    prisma.resource.count({ where }),
+  ]);
+
+  // Build filter query string for client-side "load more" requests
+  const filterParts: string[] = [];
+  if (params.access) filterParts.push(`access=${encodeURIComponent(params.access)}`);
+  if (params.category) filterParts.push(`category=${encodeURIComponent(params.category)}`);
+  if (params.resourceType) filterParts.push(`resourceType=${encodeURIComponent(params.resourceType)}`);
+  if (params.level) filterParts.push(`level=${encodeURIComponent(params.level)}`);
+  if (params.format) filterParts.push(`format=${encodeURIComponent(params.format)}`);
+  const filterParams = filterParts.join("&");
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -50,42 +79,13 @@ export default async function LibraryPage({ searchParams }: PageProps) {
         </Suspense>
       </div>
 
-      {/* Results count */}
-      <div className="mb-6 text-sm text-gray-500">
-        {resources.length} résultat{resources.length !== 1 ? "s" : ""}
-      </div>
-
-      {/* Resource Grid */}
-      {resources.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {resources.map((resource) => (
-            <ResourceCard
-              key={resource.id}
-              id={resource.id}
-              slug={resource.slug}
-              title={resource.title}
-              shortDescription={resource.shortDescription}
-              coverImage={resource.coverImage}
-              type={resource.type}
-              category={resource.category}
-              level={resource.level}
-              resourceType={resource.resourceType}
-              price={resource.price}
-              originalPrice={resource.originalPrice}
-              currency={resource.currency}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">
-            Aucune ressource ne correspond à vos critères.
-          </p>
-          <p className="text-gray-400 mt-2">
-            Essayez de modifier vos filtres pour voir plus de résultats.
-          </p>
-        </div>
-      )}
+      {/* Resource Grid with Load More */}
+      <ResourceGrid
+        initialResources={resources}
+        total={total}
+        initialHasMore={resources.length < total}
+        filterParams={filterParams}
+      />
 
       {/* Download App Section — before footer */}
       <div className="mt-16 mb-4">
