@@ -26,7 +26,24 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Rafraîchir la session si nécessaire
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Si pas d'utilisateur authentifié et qu'on accède à une route protégée,
+  // supprimer les cookies Supabase résiduels pour éviter les sessions fantômes
+  if (!user) {
+    const allCookies = request.cookies.getAll();
+    const supabaseCookies = allCookies.filter(
+      (c) => c.name.startsWith("sb-") || c.name.includes("supabase")
+    );
+    for (const cookie of supabaseCookies) {
+      supabaseResponse.cookies.set(cookie.name, "", {
+        maxAge: 0,
+        path: "/",
+      });
+    }
+  }
 
   return supabaseResponse;
 }
