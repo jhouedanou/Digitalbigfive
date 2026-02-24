@@ -8,27 +8,18 @@ interface ServiceWorkerProviderProps {
 
 export function ServiceWorkerProvider({ children }: ServiceWorkerProviderProps) {
   useEffect(() => {
-    // Register service worker
+    // PWA désactivée — remplacée par l'app Electron.
+    // Désenregistrer tout ancien Service Worker pour libérer le navigateur.
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js")
-        .then((registration) => {
-          console.log("[PWA] Service Worker registered");
-
-          // Check for updates every hour
-          setInterval(
-            () => {
-              registration.update();
-            },
-            60 * 60 * 1000
-          );
-        })
-        .catch((error) => {
-          console.error("[PWA] Service Worker registration failed:", error);
-        });
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+          console.log("[PWA] Service Worker désenregistré");
+        }
+      });
     }
 
-    // Initialize session key
+    // Initialize session key (toujours nécessaire pour le lecteur PDF)
     import("@/lib/crypto").then(({ initializeSession }) => {
       initializeSession();
     });

@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   title: "Big Five - Ressources & Produits Digitaux",
   description:
     "Découvrez nos ressources gratuites et produits digitaux premium pour booster votre stratégie marketing.",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

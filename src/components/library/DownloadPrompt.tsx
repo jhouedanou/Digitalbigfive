@@ -71,8 +71,8 @@ export default function DownloadPrompt({
       clearInterval(progressInterval);
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Échec du téléchargement");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || "Échec du téléchargement");
       }
 
       setProgress(100);

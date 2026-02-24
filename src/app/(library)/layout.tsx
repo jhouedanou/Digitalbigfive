@@ -1,10 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "Ma Bibliothèque | Digital Big Five",
-  description: "Votre bibliothèque de ressources numériques - Lisez vos PDFs hors ligne",
-  manifest: "/manifest-library.json",
+  description: "Votre bibliothèque de ressources numériques",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -29,21 +27,6 @@ export default function LibraryLayout({
   return (
     <div className="min-h-screen bg-gray-900">
       {children}
-      
-      {/* Register library service worker */}
-      <Script
-        id="library-sw-register"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.register('/sw-library.js').then(function(reg) {
-                console.log('Library SW registered:', reg.scope);
-              });
-            }
-          `,
-        }}
-      />
     </div>
   );
 }

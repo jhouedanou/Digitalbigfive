@@ -71,6 +71,22 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // NEVER intercept third-party tracking/analytics scripts
+  // Let them go directly to the network without any SW interference
+  const thirdPartyHosts = [
+    "connect.facebook.net",
+    "www.facebook.com",
+    "graph.facebook.com",
+    "www.google-analytics.com",
+    "www.googletagmanager.com",
+    "snap.licdn.com",
+    "analytics.tiktok.com",
+    "tr.snapchat.com",
+  ];
+  if (thirdPartyHosts.includes(url.hostname)) {
+    return; // Let the browser handle it natively
+  }
+
   // Handle PDF requests specially (GET only - POST requests like prepare-offline go to API handler)
   if (request.method === "GET" && (url.pathname.startsWith("/api/pdf/") || url.pathname.includes(".pdf"))) {
     event.respondWith(handlePDFRequest(request));
