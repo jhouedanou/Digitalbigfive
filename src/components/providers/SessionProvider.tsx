@@ -48,8 +48,11 @@ export default function AuthProvider({
   }, [supabase.auth]);
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    window.location.href = "/";
+    // scope: 'global' invalide toutes les sessions (pas juste la locale)
+    await supabase.auth.signOut({ scope: "global" });
+    setUser(null);
+    // Forcer le nettoyage complet via un rechargement dur
+    window.location.replace("/");
   }
 
   return (

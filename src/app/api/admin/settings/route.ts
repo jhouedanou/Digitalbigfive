@@ -38,7 +38,7 @@ export async function PUT(req: NextRequest) {
     await prisma.siteSettings.upsert({
       where: { key },
       update: { value: String(value) },
-      create: { key, value: String(value) },
+      create: { id: key, key, value: String(value) },
     });
   }
 

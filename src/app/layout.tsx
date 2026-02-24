@@ -3,6 +3,7 @@ import AuthProvider from "@/components/providers/SessionProvider";
 import { ServiceWorkerProvider } from "@/components/pwa/ServiceWorkerProvider";
 import PageTransitionBar from "@/components/layout/PageTransitionBar";
 import ElectronUpdater from "@/components/electron/ElectronUpdater";
+import MetaPixelLoader from "@/components/tracking/MetaPixelLoader";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -56,6 +57,7 @@ export default function RootLayout({
           <ServiceWorkerProvider>
             <PageTransitionBar />
             <ElectronUpdater />
+            <MetaPixelLoader />
             {children}
           </ServiceWorkerProvider>
         </AuthProvider>
