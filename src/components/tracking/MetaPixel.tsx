@@ -41,9 +41,9 @@ export default function MetaPixel({ pixelId }: { pixelId: string }) {
 
     if (
       typeof window !== "undefined" &&
-      typeof (window as Record<string, unknown>).fbq === "function"
+      typeof (window as unknown as Record<string, unknown>).fbq === "function"
     ) {
-      (window as Record<string, unknown> & { fbq: (...args: unknown[]) => void }).fbq(
+      (window as unknown as Record<string, unknown> & { fbq: (...args: unknown[]) => void }).fbq(
         "track",
         "PageView"
       );
