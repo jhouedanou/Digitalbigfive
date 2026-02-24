@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import FAQEditor, { type FAQItem } from "./FAQEditor";
+import { extractDriveFileId, getDriveImageUrl } from "@/lib/utils";
 
 const RichTextEditor = dynamic(() => import("./RichTextEditor"), {
   ssr: false,
@@ -81,34 +82,9 @@ const RESOURCE_TYPES = [
 const LEVELS = ["Débutant", "Intermédiaire", "Avancé"];
 const FORMATS = ["PDF", "Spreadsheet", "Slides", "Notion", "Vidéo"];
 
-/**
- * Extrait l'ID d'un fichier Google Drive à partir de différents formats d'URL.
- * Retourne null si ce n'est pas un lien Drive.
- */
-function extractDriveFileId(url: string): string | null {
-  if (!url) return null;
-  // Format: https://drive.google.com/file/d/FILE_ID/...
-  let match = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (match) return match[1];
-  // Format: https://drive.google.com/open?id=FILE_ID
-  match = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-  if (match) return match[1];
-  // Format: https://drive.google.com/uc?id=FILE_ID
-  match = url.match(/drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/);
-  if (match) return match[1];
-  return null;
-}
-
-/**
- * Convertit une URL (potentiellement Google Drive) en URL affichable en <img>.
- * Les liens Drive sont convertis en URL thumbnail, les autres URL sont retournées telles quelles.
- */
+/** Alias local pour compatibilité */
 function getPreviewUrl(url: string): string {
-  const driveId = extractDriveFileId(url);
-  if (driveId) {
-    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
-  }
-  return url;
+  return getDriveImageUrl(url);
 }
 
 export default function ResourceForm({

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Sparkles, ArrowRight, Star, BookOpen, TrendingUp } from "lucide-react";
+import { getDriveImageUrl } from "@/lib/utils";
 
 interface RecommendedProduct {
   id: string;
@@ -69,7 +70,7 @@ export default function ProductRecommendations({
               className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-[#80368D]/30 hover:shadow-sm transition-all group"
             >
               <img
-                src={product.coverImage || "/placeholder.svg"}
+                src={getDriveImageUrl(product.coverImage)}
                 alt={product.title}
                 className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
               />
@@ -174,7 +175,7 @@ export default function ProductRecommendations({
             {/* Image */}
             <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
               <img
-                src={product.coverImage || "/placeholder.svg"}
+                src={getDriveImageUrl(product.coverImage)}
                 alt={product.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />

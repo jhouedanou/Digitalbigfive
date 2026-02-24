@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getDriveImageUrl } from "@/lib/utils";
 import {
   Download,
   X,
@@ -172,7 +173,7 @@ export default function DownloadPrompt({
             <div className="w-20 h-28 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
               {product.coverImage ? (
                 <img
-                  src={product.coverImage}
+                  src={getDriveImageUrl(product.coverImage)}
                   alt={product.title}
                   className="w-full h-full object-cover"
                 />

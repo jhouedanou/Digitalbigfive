@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, getDriveImageUrl } from "@/lib/utils";
 
 interface ResourceCardProps {
   id: string;
@@ -37,7 +37,7 @@ export default function ResourceCard({
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden transition-shadow hover:shadow-lg">
         <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
           <img
-            src={coverImage || "/placeholder.svg"}
+            src={getDriveImageUrl(coverImage)}
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />

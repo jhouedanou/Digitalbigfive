@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { BookOpen, Receipt, Star } from "lucide-react";
+import { getDriveImageUrl } from "@/lib/utils";
 import DownloadAppButton from "@/components/pwa/DownloadAppButton";
 
 export default async function DashboardHome() {
@@ -100,7 +101,7 @@ export default async function DashboardHome() {
               >
                 <div className="aspect-[4/3] bg-gray-100">
                   <img
-                    src={product.coverImage || "/placeholder.svg"}
+                    src={getDriveImageUrl(product.coverImage)}
                     alt={product.title}
                     className="w-full h-full object-cover"
                   />

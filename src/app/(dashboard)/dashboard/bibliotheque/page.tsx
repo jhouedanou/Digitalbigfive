@@ -5,6 +5,7 @@ import { BookOpen, Loader2, BookMarked, Search } from "lucide-react";
 import { useAuth } from "@/components/providers/SessionProvider";
 import Link from "next/link";
 import Image from "next/image";
+import { getDriveImageUrl } from "@/lib/utils";
 import DownloadAppButton from "@/components/pwa/DownloadAppButton";
 
 interface Book {
@@ -249,11 +250,12 @@ function BookCard({ book }: { book: Book }) {
         {/* Cover image */}
         {book.coverImage ? (
           <Image
-            src={book.coverImage}
+            src={getDriveImageUrl(book.coverImage)}
             alt={book.title}
             fill
             className="object-cover"
             sizes="140px"
+            unoptimized
           />
         ) : (
           /* Fallback cover */

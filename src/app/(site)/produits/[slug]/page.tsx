@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { formatPrice, formatDate } from "@/lib/utils";
+import { formatPrice, formatDate, getDriveImageUrl } from "@/lib/utils";
 import BuyButton from "@/components/products/BuyButton";
 import FAQSection from "@/components/products/FAQSection";
 import TestimonialSection from "@/components/products/TestimonialSection";
@@ -189,7 +189,7 @@ export default async function ProductPage({ params }: PageProps) {
             {/* Product image */}
             <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg">
               <img
-                src={resource.coverImage || "/placeholder.svg"}
+                src={getDriveImageUrl(resource.coverImage)}
                 alt={resource.title}
                 className="w-full object-cover"
               />

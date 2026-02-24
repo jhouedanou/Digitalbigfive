@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { getDriveImageUrl } from "@/lib/utils";
 import {
   BookOpen,
   Download,
@@ -666,7 +667,7 @@ function BookCover3D({
         >
           {book.coverImage ? (
             <img
-              src={book.coverImage}
+              src={getDriveImageUrl(book.coverImage)}
               alt={book.title}
               className="w-full h-full object-cover"
             />
@@ -804,7 +805,7 @@ function ListView({
             <div className="w-14 h-20 flex-shrink-0 rounded-sm overflow-hidden shadow-lg">
               {book.coverImage ? (
                 <img
-                  src={book.coverImage}
+                  src={getDriveImageUrl(book.coverImage)}
                   alt={book.title}
                   className="w-full h-full object-cover"
                 />

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { getDriveImageUrl } from "@/lib/utils";
 import {
   Download,
   Check,
@@ -357,11 +358,12 @@ function ProductBookCard({
         {/* Cover image */}
         {product.coverImage ? (
           <Image
-            src={product.coverImage}
+            src={getDriveImageUrl(product.coverImage)}
             alt={product.title}
             fill
             className="object-cover"
             sizes="140px"
+            unoptimized
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#80368D] to-[#29358B] flex flex-col items-center justify-center p-3 text-center">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { BookOpen, Download, Wifi, WifiOff, Search, Grid, List, Trash2, RefreshCw } from "lucide-react";
 import { offlineStorage, OfflinePDF } from "@/lib/offline-storage";
+import { getDriveImageUrl } from "@/lib/utils";
 
 interface LibraryBook {
   id: string;
@@ -316,7 +317,7 @@ export default function LibraryView() {
                 {/* Thumbnail */}
                 <div className="w-16 h-20 bg-gradient-to-br from-[#80368D] to-[#29358B] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                   {book.coverUrl ? (
-                    <img src={book.coverUrl} alt="" className="w-full h-full object-cover" />
+                    <img src={getDriveImageUrl(book.coverUrl)} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <BookOpen className="w-6 h-6 text-white/80" />
                   )}

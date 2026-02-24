@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getDriveImageUrl } from "@/lib/utils";
 import DirectDownloadButton from "@/components/resources/DirectDownloadButton";
 import ProductRecommendations from "@/components/upsell/ProductRecommendations";
 import FAQSection from "@/components/products/FAQSection";
@@ -85,7 +85,7 @@ export default async function FreeResourcePage({ params }: PageProps) {
           {/* Cover image / Preview */}
           <div className="mb-8 rounded-xl overflow-hidden border border-gray-200">
             <img
-              src={resource.coverImage || "/placeholder.svg"}
+              src={getDriveImageUrl(resource.coverImage)}
               alt={resource.title}
               className="w-full object-cover"
             />
