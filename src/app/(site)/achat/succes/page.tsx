@@ -6,6 +6,7 @@ import { useEffect, useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import DownloadPrompt from "@/components/library/DownloadPrompt";
 import { Download, BookOpen, ArrowRight } from "lucide-react";
+import { trackPixelEvent } from "@/lib/pixel";
 
 interface OrderDetails {
   orderId: string;
@@ -84,6 +85,18 @@ function SuccessContent() {
           if (data.order) {
             setOrderDetails(data.order);
             setTimeout(() => setShowDownloadPrompt(true), 1000);
+
+            // Événement Pixel : Purchase (déduplication avec CAPI via eventId basé sur orderId)
+            trackPixelEvent(
+              "Purchase",
+              {
+                value: data.order.amount,
+                currency: data.order.currency || "XOF",
+                content_ids: [data.order.productId],
+                content_type: "product",
+              },
+              `purchase_${data.order.orderId}`
+            );
           }
         } else if (data.status === "failed") {
           setStatus("failed");

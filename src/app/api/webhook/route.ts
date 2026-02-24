@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyIpnSignature, verifyIpnSha256 } from "@/lib/paytech";
 import { sendOrderConfirmation, sendAdminNewOrderNotification, sendProductAccessEmail } from "@/lib/email";
+import { sendCAPIEvent } from "@/lib/meta-tracking";
 
 export async function POST(request: NextRequest) {
   try {
@@ -96,6 +97,33 @@ export async function POST(request: NextRequest) {
         // Utiliser after() pour que les emails soient envoyés APRÈS la réponse HTTP
         // sans être tués par l'arrêt de la fonction serverless Vercel
         after(async () => {
+          // CAPI : Purchase (déduplication avec le Pixel via eventId)
+          try {
+            const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+                       request.headers.get("x-real-ip") || undefined;
+            const userAgent = request.headers.get("user-agent") || undefined;
+            await sendCAPIEvent({
+              eventName: "Purchase",
+              eventId: `purchase_${updatedOrder.id}`,
+              email: updatedOrder.user.email,
+              firstName: updatedOrder.user.firstName || undefined,
+              lastName: updatedOrder.user.lastName || undefined,
+              ip,
+              userAgent,
+              sourceUrl: `${process.env.NEXT_PUBLIC_APP_URL}/achat/succes`,
+              customData: {
+                value: updatedOrder.amount,
+                currency: updatedOrder.currency || "XOF",
+                content_ids: [updatedOrder.resource.slug],
+                content_type: "product",
+                order_id: updatedOrder.id,
+              },
+            });
+            console.log("[Webhook] ✅ CAPI Purchase envoyé pour commande", updatedOrder.id);
+          } catch (err: any) {
+            console.error("[Webhook] ❌ CAPI Purchase échoué:", err?.message || err);
+          }
+
           try {
             // Email confirmation client
             await sendOrderConfirmation({

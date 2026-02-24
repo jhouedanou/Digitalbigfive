@@ -10,11 +10,20 @@ const EXPIRATION_DAYS = 30; // PDFs expire after 30 days offline
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 );
 
 export async function POST(request: NextRequest) {
   try {
+    // Check required env vars
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("[prepare-offline] SUPABASE_SERVICE_ROLE_KEY is not set");
+      return NextResponse.json(
+        { error: "Configuration serveur manquante (SUPABASE_SERVICE_ROLE_KEY). Ajoutez cette variable dans vos variables d'environnement." },
+        { status: 500 }
+      );
+    }
+
     const session = await auth();
     console.log("[prepare-offline] Session:", session?.user?.id);
     

@@ -3,6 +3,7 @@ import AuthProvider from "@/components/providers/SessionProvider";
 import { ServiceWorkerProvider } from "@/components/pwa/ServiceWorkerProvider";
 import PageTransitionBar from "@/components/layout/PageTransitionBar";
 import ElectronUpdater from "@/components/electron/ElectronUpdater";
+import PixelLoader from "@/components/tracking/PixelLoader";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -54,6 +55,7 @@ export default function RootLayout({
       <body className="antialiased">
         <AuthProvider>
           <ServiceWorkerProvider>
+            <PixelLoader />
             <PageTransitionBar />
             <ElectronUpdater />
             {children}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/SessionProvider";
+import { trackPixelEvent } from "@/lib/pixel";
 
 interface BuyButtonProps {
   resourceSlug: string;
@@ -44,6 +45,13 @@ export default function BuyButton({ resourceSlug, className = "" }: BuyButtonPro
       if (!res.ok) {
         throw new Error(data.error || "Erreur lors du paiement");
       }
+
+      // Événement Pixel : InitiateCheckout (déduplication avec CAPI via eventId basé sur orderId)
+      trackPixelEvent(
+        "InitiateCheckout",
+        { content_ids: [resourceSlug], num_items: 1 },
+        `checkout_${data.orderId}`
+      );
 
       window.location.href = data.checkout_url;
     } catch (err) {

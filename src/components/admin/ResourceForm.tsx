@@ -81,6 +81,36 @@ const RESOURCE_TYPES = [
 const LEVELS = ["Débutant", "Intermédiaire", "Avancé"];
 const FORMATS = ["PDF", "Spreadsheet", "Slides", "Notion", "Vidéo"];
 
+/**
+ * Extrait l'ID d'un fichier Google Drive à partir de différents formats d'URL.
+ * Retourne null si ce n'est pas un lien Drive.
+ */
+function extractDriveFileId(url: string): string | null {
+  if (!url) return null;
+  // Format: https://drive.google.com/file/d/FILE_ID/...
+  let match = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  // Format: https://drive.google.com/open?id=FILE_ID
+  match = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  // Format: https://drive.google.com/uc?id=FILE_ID
+  match = url.match(/drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  return null;
+}
+
+/**
+ * Convertit une URL (potentiellement Google Drive) en URL affichable en <img>.
+ * Les liens Drive sont convertis en URL thumbnail, les autres URL sont retournées telles quelles.
+ */
+function getPreviewUrl(url: string): string {
+  const driveId = extractDriveFileId(url);
+  if (driveId) {
+    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
+  }
+  return url;
+}
+
 export default function ResourceForm({
   initialData,
 }: {
@@ -357,12 +387,18 @@ export default function ResourceForm({
               </div>
             </div>
             {data.coverImage && (
-              <div className="w-24 h-24 rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
+              <div className="w-24 h-24 rounded-lg border border-gray-200 overflow-hidden flex-shrink-0 relative">
                 <img
-                  src={data.coverImage}
+                  src={getPreviewUrl(data.coverImage)}
                   alt="Aperçu"
                   className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
                 />
+                {extractDriveFileId(data.coverImage) && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5">
+                    Drive
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -407,7 +443,20 @@ export default function ResourceForm({
               </div>
             </div>
             {data.filePath && (
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 flex flex-col items-center gap-2">
+                {extractDriveFileId(data.filePath) && (
+                  <div className="w-20 h-24 rounded-lg border border-gray-200 overflow-hidden relative">
+                    <img
+                      src={getPreviewUrl(data.filePath)}
+                      alt="Aperçu PDF"
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5">
+                      Drive
+                    </div>
+                  </div>
+                )}
                 <a
                   href={data.filePath}
                   target="_blank"

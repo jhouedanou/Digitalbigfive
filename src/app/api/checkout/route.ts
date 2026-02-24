@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { initializePayment } from "@/lib/paytech";
+import { sendCAPIEvent } from "@/lib/meta-tracking";
 
 export async function POST(request: NextRequest) {
   try {
@@ -104,6 +105,27 @@ export async function POST(request: NextRequest) {
       where: { id: order.id },
       data: { paytechToken: payment.token },
     });
+
+    // CAPI : InitiateCheckout (déduplication avec le Pixel via eventId)
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+               request.headers.get("x-real-ip") || undefined;
+    const userAgent = request.headers.get("user-agent") || undefined;
+    sendCAPIEvent({
+      eventName: "InitiateCheckout",
+      eventId: `checkout_${order.id}`,
+      email: user.email,
+      firstName: user.firstName || undefined,
+      lastName: user.lastName || undefined,
+      ip,
+      userAgent,
+      sourceUrl: `${process.env.NEXT_PUBLIC_APP_URL}/produits/${resource.slug}`,
+      customData: {
+        value: resource.price,
+        currency: resource.currency || "XOF",
+        content_ids: [resource.slug],
+        num_items: 1,
+      },
+    }).catch(() => {/* CAPI non-bloquant */});
 
     return NextResponse.json({
       checkout_url: payment.redirect_url,

@@ -71,8 +71,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Handle PDF requests specially
-  if (url.pathname.startsWith("/api/pdf/") || url.pathname.includes(".pdf")) {
+  // Handle PDF requests specially (GET only - POST requests like prepare-offline go to API handler)
+  if (request.method === "GET" && (url.pathname.startsWith("/api/pdf/") || url.pathname.includes(".pdf"))) {
     event.respondWith(handlePDFRequest(request));
     return;
   }
@@ -89,6 +89,11 @@ self.addEventListener("fetch", (event) => {
 
 // Handle PDF requests with offline support
 async function handlePDFRequest(request) {
+  // Cache API only supports GET requests
+  if (request.method !== "GET") {
+    return fetch(request);
+  }
+
   const isOnline = navigator.onLine;
 
   if (isOnline) {
