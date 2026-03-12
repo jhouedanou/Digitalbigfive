@@ -99,8 +99,10 @@ model Order {
   currency          String   @default("XOF")
   status            String   @default("pending")
   createdAt         DateTime @default(now())
+  paymentProvider   String   @default("paytech") // "paytech" | "moneroo"
   paytechPaymentRef String?
   paytechToken      String?
+  monerooPaymentId  String?
   resource          Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -22,6 +22,11 @@ function SuccessContent() {
   const searchParams = useSearchParams();
   // PayTech peut envoyer le token sous différents noms selon la version
   const token = searchParams.get("token") || searchParams.get("token_payment") || searchParams.get("ref");
+  // Moneroo envoie paymentId et provider dans l'URL de retour
+  const monerooPaymentId = searchParams.get("paymentId");
+  const provider = searchParams.get("provider");
+  const isMoneroo = provider === "moneroo" && monerooPaymentId;
+
   const [status, setStatus] = useState<"loading" | "success" | "pending" | "failed">(
     "loading"
   );
@@ -64,11 +69,16 @@ function SuccessContent() {
 
     async function verifyPayment() {
       try {
-        // PayTech passe le token dans l'URL → on vérifie d'abord par token
-        // Sinon fallback sur la dernière commande de l'utilisateur connecté
-        const url = token
-          ? `/api/checkout/verify?token=${token}`
-          : `/api/checkout/verify-latest`;
+        // Moneroo : vérification par paymentId
+        // PayTech : vérification par token ou fallback sur la dernière commande
+        let url: string;
+        if (isMoneroo) {
+          url = `/api/checkout/verify-moneroo?paymentId=${monerooPaymentId}`;
+        } else if (token) {
+          url = `/api/checkout/verify?token=${token}`;
+        } else {
+          url = `/api/checkout/verify-latest`;
+        }
 
         const res = await fetch(url);
 
@@ -126,7 +136,7 @@ function SuccessContent() {
     verifyPayment();
 
     return () => clearTimeout(pollTimer);
-  }, [token]);
+  }, [token, isMoneroo, monerooPaymentId]);
 
   // Connexion rapide pour les nouveaux utilisateurs après paiement
   async function handleQuickLogin(e: React.FormEvent) {
@@ -165,7 +175,7 @@ function SuccessContent() {
           Confirmation du paiement...
         </h1>
         <p className="text-gray-600 mb-3">
-          Nous attendons la confirmation de PayTech.
+          Nous attendons la confirmation de votre paiement.
         </p>
         {pollCount > 0 && (
           <p className="text-sm text-gray-400">
