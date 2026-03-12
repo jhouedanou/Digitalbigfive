@@ -129,7 +129,9 @@ export async function POST(request: NextRequest) {
       orderId: order.id,
     });
   } catch (error: any) {
-    console.error("[Moneroo Checkout] Error:", error?.message || error);
+    console.error("[Moneroo Checkout] Error:", error);
+    console.error("[Moneroo Checkout] Stack:", error?.stack);
+    console.error("[Moneroo Checkout] Message:", error?.message);
 
     if (error?.monerooError) {
       return NextResponse.json(
@@ -139,7 +141,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Erreur lors de l'initialisation du paiement." },
+      { error: error?.message || "Erreur lors de l'initialisation du paiement." },
       { status: 500 }
     );
   }
