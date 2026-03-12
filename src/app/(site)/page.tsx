@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { getAllChariowResources } from "@/lib/chariow";
 import FilterBar from "@/components/resources/FilterBar";
 import ResourceGrid from "@/components/resources/ResourceGrid";
-import DownloadAppButton from "@/components/pwa/DownloadAppButton";
 
 const PAGE_SIZE = 6;
 
@@ -11,6 +10,8 @@ interface PageProps {
     access?: string;
     category?: string;
     resourceType?: string;
+    level?: string;
+    format?: string;
   }>;
 }
 
@@ -31,6 +32,14 @@ export default async function LibraryPage({ searchParams }: PageProps) {
   if (params.resourceType) {
     resources = resources.filter((r) => r.resourceType === params.resourceType);
   }
+  if (params.level) {
+    resources = resources.filter((r) => r.level === params.level);
+  }
+  if (params.format) {
+    resources = resources.filter(
+      (r) => (r as unknown as Record<string, string>).format === params.format
+    );
+  }
 
   const total = resources.length;
 
@@ -44,6 +53,10 @@ export default async function LibraryPage({ searchParams }: PageProps) {
     filterParts.push(
       `resourceType=${encodeURIComponent(params.resourceType)}`
     );
+  if (params.level)
+    filterParts.push(`level=${encodeURIComponent(params.level)}`);
+  if (params.format)
+    filterParts.push(`format=${encodeURIComponent(params.format)}`);
   const filterParams = filterParts.join("&");
 
   return (
@@ -73,11 +86,6 @@ export default async function LibraryPage({ searchParams }: PageProps) {
         initialHasMore={resources.length > PAGE_SIZE}
         filterParams={filterParams}
       />
-
-      {/* Download App Section */}
-      <div className="mt-16 mb-4">
-        <DownloadAppButton variant="full" />
-      </div>
     </div>
   );
 }

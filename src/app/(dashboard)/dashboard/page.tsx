@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { BookOpen, Receipt, Star } from "lucide-react";
 import { getDriveImageUrl } from "@/lib/utils";
-import DownloadAppButton from "@/components/pwa/DownloadAppButton";
 
 export default async function DashboardHome() {
   const session = await auth();
@@ -79,11 +78,6 @@ export default async function DashboardHome() {
           </div>
           <p className="text-3xl font-bold text-gray-900">{testimonialCount}</p>
         </Link>
-      </div>
-
-      {/* Download App / PWA */}
-      <div className="mb-8">
-        <DownloadAppButton variant="banner" />
       </div>
 
       {/* Recommendations */}

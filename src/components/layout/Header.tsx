@@ -3,14 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, User, LogOut, UserRoundPlus } from "lucide-react";
-import { useAuth } from "@/components/providers/SessionProvider";
+import { Menu, X } from "lucide-react";
 
 export default function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, loading, signOut } = useAuth();
-
   const links = [
     { href: "/", label: "Ressources" },
   ];
@@ -41,60 +38,7 @@ export default function Header() {
               </Link>
             ))}
 
-            {/* Indicateur de connexion */}
-            {loading ? (
-              <span className="text-xs text-gray-400">…</span>
-            ) : user ? (
-              <div className="flex items-center gap-3">
-                {/* User info */}
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
-                  <div className="w-8 h-8 bg-gradient-to-br from-[#80368D] to-[#29358B] rounded-full flex items-center justify-center text-white text-xs font-bold">
-                    {(user.user_metadata?.full_name || user.user_metadata?.name)?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
-                  </div>
-                  <div className="hidden lg:block">
-                    <p className="text-sm font-medium text-gray-900 leading-tight">
-                      {user.user_metadata?.full_name || user.user_metadata?.name || "Utilisateur"}
-                    </p>
-                    <p className="text-xs text-gray-500 leading-tight">
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-1.5 text-sm font-medium text-[#80368D] hover:text-[#6a2d76] transition-colors"
-                >
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#80368D] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#80368D]"></span>
-                  </span>
-                  Mon espace
-                </Link>
-                <button
-                  onClick={() => signOut()}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                  title="Déconnexion"
-                >
-                  <LogOut size={16} />
-                </button>
-              </div>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  <User size={16} />
-                  Se connecter
-                </Link>
-              
-                <Link href="/inscription" className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                  {/* icone lucide pour ouvrir un compte  */}
-                  <UserRoundPlus size={16} />
-                  S'inscrire
-                </Link>
-              </>
-            )}
+
           </nav>
 
           <button
@@ -117,46 +61,7 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
-            {!loading && (
-              user ? (
-                <div className="flex items-center gap-3 py-2">
-                  <Link
-                    href="/dashboard"
-                    className="flex items-center gap-1.5 text-sm font-medium text-[#80368D]"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#80368D] opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#80368D]"></span>
-                    </span>
-                    Mon espace
-                  </Link>
-                  <button
-                    onClick={() => signOut()}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <LogOut size={16} />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="block py-2 text-sm text-gray-600 hover:text-gray-900"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Se connecter
-                  </Link>
-                  <Link
-                    href="/inscription"
-                    className="block py-2 text-sm text-gray-600 hover:text-gray-900"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    S'inscrire
-                  </Link>
-                </>
-              )
-            )}
+
           </div>
         )}
       </div>

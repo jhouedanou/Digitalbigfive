@@ -45,7 +45,8 @@
       "Bash(ls c:/Users/socialmedia/Documents/GitHub/Digitalbigfive/src/app/\\\\\\(site\\\\\\)/produits/)",
       "Bash(ls c:/Users/socialmedia/Documents/GitHub/Digitalbigfive/src/app/\\\\\\(site\\\\\\)/produits/[slug]/)",
       "Bash(python3 -c \":*)",
-      "WebFetch(domain:js.chariow.com)"
+      "WebFetch(domain:js.chariow.com)",
+      "Bash(ls \"c:/Users/socialmedia/Documents/GitHub/Digitalbigfive/src/app/\\(dashboard\\)/dashboard/\")"
     ]
   }
 }

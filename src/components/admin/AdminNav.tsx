@@ -6,8 +6,6 @@ import { useAuth } from "@/components/providers/SessionProvider";
 import {
   LayoutDashboard,
   FileText,
-  Users,
-  UserCheck,
   MessageSquare,
   BarChart3,
   LogOut,
@@ -20,8 +18,6 @@ export default function AdminNav() {
   const links = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/ressources", label: "Ressources", icon: FileText },
-    { href: "/admin/contacts", label: "Contacts", icon: Users },
-    { href: "/admin/clients", label: "Clients", icon: UserCheck },
     { href: "/admin/temoignages", label: "Témoignages", icon: MessageSquare },
     { href: "/admin/tracking", label: "Tracking", icon: BarChart3 },
   ];

@@ -76,12 +76,6 @@ export default async function OrderHistoryPage() {
                   {order.status === "paid" && (
                     <>
                       <Link
-                        href={`/dashboard/reader/${order.resource.id}`}
-                        className="bg-[#80368D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a2d76] transition-colors"
-                      >
-                        Lire
-                      </Link>
-                      <Link
                         href={`/dashboard/recu/${order.id}`}
                         className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
                       >

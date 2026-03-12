@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import AuthProvider from "@/components/providers/SessionProvider";
 import { ServiceWorkerProvider } from "@/components/pwa/ServiceWorkerProvider";
 import PageTransitionBar from "@/components/layout/PageTransitionBar";
-import ElectronUpdater from "@/components/electron/ElectronUpdater";
 import PixelLoader from "@/components/tracking/PixelLoader";
 import "./globals.css";
 
@@ -62,7 +61,6 @@ export default function RootLayout({
               <PixelLoader />
             </Suspense>
             <PageTransitionBar />
-            <ElectronUpdater />
             {children}
           </ServiceWorkerProvider>
         </AuthProvider>

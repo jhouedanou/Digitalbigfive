@@ -3,17 +3,12 @@
 import { Suspense, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 
 function LoginForm() {
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/dashboard";
+  const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/admin";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const inscriptionHref = redirect && redirect !== "/dashboard"
-    ? `/inscription?redirect=${encodeURIComponent(redirect)}`
-    : "/inscription";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -83,12 +78,6 @@ function LoginForm() {
         </button>
       </form>
 
-      <p className="text-sm text-gray-500 text-center mt-6">
-        Pas encore de compte ?{" "}
-        <Link href={inscriptionHref} className="text-[#80368D] underline">
-          Créer un compte
-        </Link>
-      </p>
     </>
   );
 }
@@ -100,7 +89,7 @@ export default function LoginPage() {
         Connexion
       </h1>
       <p className="text-sm text-gray-500 text-center mb-8">
-        Accédez à votre espace client
+        Espace administrateur
       </p>
 
       <Suspense fallback={<div className="h-40" />}>
