@@ -6,7 +6,11 @@ import { sendCAPIEvent } from "@/lib/meta-tracking";
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[Moneroo Checkout] === START ===");
+    
     const session = await auth();
+    console.log("[Moneroo Checkout] Session:", session?.user?.id || "null");
+    
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Vous devez être connecté pour effectuer un achat." },
@@ -68,6 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Créer une commande en attente
+    console.log("[Moneroo Checkout] Creating order for user:", user.id, "resource:", resource.id);
     const order = await prisma.order.create({
       data: {
         userId: user.id,
@@ -78,10 +83,12 @@ export async function POST(request: NextRequest) {
         paymentProvider: "moneroo",
       },
     });
+    console.log("[Moneroo Checkout] Order created:", order.id);
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     // Initialiser le paiement Moneroo
+    console.log("[Moneroo Checkout] Initializing Moneroo payment...");
     const payment = await initializeMonerooPayment({
       amount: resource.price,
       currency: resource.currency,
@@ -98,6 +105,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Stocker l'ID de paiement Moneroo
+    console.log("[Moneroo Checkout] Storing moneroo payment ID:", payment.id);
     await prisma.order.update({
       where: { id: order.id },
       data: { monerooPaymentId: payment.id },
