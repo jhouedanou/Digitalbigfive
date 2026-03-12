@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+
 import { Suspense } from "react";
 import AuthProvider from "@/components/providers/SessionProvider";
 import { ServiceWorkerProvider } from "@/components/pwa/ServiceWorkerProvider";
@@ -51,8 +52,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="msapplication-TileImage" content="/icons/mstile-144x144.png" />
+        <link rel="stylesheet" href="https://js.chariow.com/v1/widget.min.css" />
       </head>
       <body className="antialiased">
+
         <AuthProvider>
           <ServiceWorkerProvider>
             <Suspense fallback={null}>

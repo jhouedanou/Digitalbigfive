@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
       },
+      {
+        protocol: "https",
+        hostname: "images.chariow.com",
+      },
+      {
+        protocol: "https",
+        hostname: "assets.cdn.chariow.com",
+      },
     ],
   },
   experimental: {

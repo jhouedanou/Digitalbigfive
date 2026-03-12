@@ -16,6 +16,11 @@ interface Resource {
   price?: number | null;
   originalPrice?: number | null;
   currency?: string;
+  priceFormatted?: string | null;
+  originalPriceFormatted?: string | null;
+  priceOff?: string | null;
+  externalUrl?: string;
+  source?: "db" | "chariow";
 }
 
 interface ResourceGridProps {
@@ -101,6 +106,11 @@ export default function ResourceGrid({
                 price={resource.price}
                 originalPrice={resource.originalPrice}
                 currency={resource.currency}
+                priceFormatted={resource.priceFormatted}
+                originalPriceFormatted={resource.originalPriceFormatted}
+                priceOff={resource.priceOff}
+                externalUrl={resource.externalUrl}
+                source={resource.source}
               />
             ))}
           </div>

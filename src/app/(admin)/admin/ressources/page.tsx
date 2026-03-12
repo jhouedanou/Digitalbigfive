@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Edit, Trash2 } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
 
 interface Resource {
   id: string;
@@ -17,15 +16,14 @@ interface Resource {
 
 export default function AdminResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
-  const [filter, setFilter] = useState("");
 
   useEffect(() => {
-    const params = filter ? `?type=${filter}` : "";
-    fetch(`/api/resources${params}`)
+    // Charger uniquement les ressources gratuites (payantes gérées sur Chariow)
+    fetch("/api/resources?type=free")
       .then((res) => res.json())
       .then((data) => setResources(data))
       .catch(() => {});
-  }, [filter]);
+  }, []);
 
   async function handleDelete(id: string) {
     if (!confirm("Supprimer cette ressource ?")) return;
@@ -36,9 +34,22 @@ export default function AdminResourcesPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Gestion des ressources
-        </h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Ressources gratuites
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Les produits payants sont gérés sur{" "}
+            <a
+              href="https://ressources.bigfive.solutions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#80368D] underline"
+            >
+              Chariow
+            </a>
+          </p>
+        </div>
         <Link
           href="/admin/ressources/new"
           className="flex items-center gap-2 bg-[#80368D] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a2d76]"
@@ -46,23 +57,6 @@ export default function AdminResourcesPage() {
           <Plus size={16} />
           Nouvelle ressource
         </Link>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-2 mb-6">
-        {["", "free", "paid"].map((val) => (
-          <button
-            key={val}
-            onClick={() => setFilter(val)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-              filter === val
-                ? "bg-[#80368D] text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {val === "" ? "Tous" : val === "free" ? "Gratuit" : "Payant"}
-          </button>
-        ))}
       </div>
 
       {/* Table */}
@@ -74,16 +68,13 @@ export default function AdminResourcesPage() {
                 Titre
               </th>
               <th className="text-left px-6 py-3 font-medium text-gray-500">
-                Type
-              </th>
-              <th className="text-left px-6 py-3 font-medium text-gray-500">
                 Statut
               </th>
               <th className="text-left px-6 py-3 font-medium text-gray-500">
-                Prix
+                Catégorie
               </th>
               <th className="text-left px-6 py-3 font-medium text-gray-500">
-                Stats
+                Téléchargements
               </th>
               <th className="text-right px-6 py-3 font-medium text-gray-500">
                 Actions
@@ -99,38 +90,25 @@ export default function AdminResourcesPage() {
                 <td className="px-6 py-4">
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      r.type === "free"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-[#D0E4F2] text-[#80368D]"
-                    }`}
-                  >
-                    {r.type === "free" ? "Gratuit" : "Payant"}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                       r.status === "published"
                         ? "bg-green-100 text-green-700"
                         : r.status === "archived"
-                        ? "bg-gray-100 text-gray-500"
-                        : "bg-yellow-100 text-yellow-700"
+                          ? "bg-gray-100 text-gray-500"
+                          : "bg-yellow-100 text-yellow-700"
                     }`}
                   >
                     {r.status === "published"
                       ? "Publié"
                       : r.status === "archived"
-                      ? "Archivé"
-                      : "Brouillon"}
+                        ? "Archivé"
+                        : "Brouillon"}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-gray-600">
-                  {r.price ? formatPrice(r.price) : "-"}
+                  {r.category}
                 </td>
-                <td className="px-6 py-4 text-xs text-gray-500">
-                  {r.type === "paid"
-                    ? `${r._count.orders} vente(s)`
-                    : `${r._count.downloads} DL`}
+                <td className="px-6 py-4 text-gray-600">
+                  {r._count.downloads} DL
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex justify-end gap-2">

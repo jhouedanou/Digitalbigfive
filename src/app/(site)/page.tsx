@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { prisma } from "@/lib/prisma";
+import { getAllChariowResources } from "@/lib/chariow";
 import FilterBar from "@/components/resources/FilterBar";
 import ResourceGrid from "@/components/resources/ResourceGrid";
 import DownloadAppButton from "@/components/pwa/DownloadAppButton";
@@ -11,52 +11,39 @@ interface PageProps {
     access?: string;
     category?: string;
     resourceType?: string;
-    level?: string;
-    format?: string;
   }>;
 }
 
 export default async function LibraryPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const where: Record<string, unknown> = { status: "published" };
 
-  if (params.access === "free") where.type = "free";
-  if (params.access === "paid") where.type = "paid";
-  if (params.category) where.category = params.category;
-  if (params.resourceType) where.resourceType = params.resourceType;
-  if (params.level) where.level = params.level;
-  if (params.format) where.format = params.format;
+  let resources = await fetchChariowResources();
 
-  const [resources, total] = await Promise.all([
-    prisma.resource.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: PAGE_SIZE,
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        shortDescription: true,
-        coverImage: true,
-        type: true,
-        category: true,
-        level: true,
-        resourceType: true,
-        price: true,
-        originalPrice: true,
-        currency: true,
-      },
-    }),
-    prisma.resource.count({ where }),
-  ]);
+  // Filtres
+  if (params.access === "free") {
+    resources = resources.filter((r) => r.type === "free");
+  } else if (params.access === "paid") {
+    resources = resources.filter((r) => r.type === "paid");
+  }
+  if (params.category) {
+    resources = resources.filter((r) => r.category === params.category);
+  }
+  if (params.resourceType) {
+    resources = resources.filter((r) => r.resourceType === params.resourceType);
+  }
 
-  // Build filter query string for client-side "load more" requests
+  const total = resources.length;
+
+  // Build filter query string
   const filterParts: string[] = [];
-  if (params.access) filterParts.push(`access=${encodeURIComponent(params.access)}`);
-  if (params.category) filterParts.push(`category=${encodeURIComponent(params.category)}`);
-  if (params.resourceType) filterParts.push(`resourceType=${encodeURIComponent(params.resourceType)}`);
-  if (params.level) filterParts.push(`level=${encodeURIComponent(params.level)}`);
-  if (params.format) filterParts.push(`format=${encodeURIComponent(params.format)}`);
+  if (params.access)
+    filterParts.push(`access=${encodeURIComponent(params.access)}`);
+  if (params.category)
+    filterParts.push(`category=${encodeURIComponent(params.category)}`);
+  if (params.resourceType)
+    filterParts.push(
+      `resourceType=${encodeURIComponent(params.resourceType)}`
+    );
   const filterParams = filterParts.join("&");
 
   return (
@@ -79,18 +66,27 @@ export default async function LibraryPage({ searchParams }: PageProps) {
         </Suspense>
       </div>
 
-      {/* Resource Grid with Load More */}
+      {/* Resource Grid */}
       <ResourceGrid
-        initialResources={resources}
+        initialResources={resources.slice(0, PAGE_SIZE)}
         total={total}
-        initialHasMore={resources.length < total}
+        initialHasMore={resources.length > PAGE_SIZE}
         filterParams={filterParams}
       />
 
-      {/* Download App Section — before footer */}
+      {/* Download App Section */}
       <div className="mt-16 mb-4">
         <DownloadAppButton variant="full" />
       </div>
     </div>
   );
+}
+
+async function fetchChariowResources() {
+  try {
+    return await getAllChariowResources();
+  } catch (error) {
+    console.error("Failed to fetch Chariow products:", error);
+    return [];
+  }
 }
